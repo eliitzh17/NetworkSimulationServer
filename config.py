@@ -19,6 +19,12 @@ class BaseConfig:
     MONGODB_URI: Optional[str] = None
     MONGODB_DB: Optional[str] = None
     RABBITMQ_URL: Optional[str] = None
+    # RabbitMQ retry config
+    RABBITMQ_MAX_RETRIES: int = 3
+    RABBITMQ_INITIAL_RETRY_DELAY: int = 1  # seconds
+    RABBITMQ_RETRY_QUEUE_TTL: int = 5000  # ms
+    RABBITMQ_RETRY_EXCHANGE_SUFFIX: str = "_dlx"
+    RABBITMQ_RETRY_QUEUE_SUFFIX: str = "_retry"
     # Other truly common defaults or settings can go here
 
     @classmethod
@@ -26,6 +32,10 @@ class BaseConfig:
         mongodb_uri_val = os.getenv("MONGODB_URI")
         mongodb_db_val = os.getenv(db_env_var_key)
         rabbitmq_url_val = os.getenv("RABBITMQ_URL")
+        # Load retry config from env if present
+        cls.RABBITMQ_MAX_RETRIES = int(os.getenv("RABBITMQ_MAX_RETRIES", cls.RABBITMQ_MAX_RETRIES))
+        cls.RABBITMQ_INITIAL_RETRY_DELAY = int(os.getenv("RABBITMQ_INITIAL_RETRY_DELAY", cls.RABBITMQ_INITIAL_RETRY_DELAY))
+        cls.RABBITMQ_RETRY_QUEUE_TTL = int(os.getenv("RABBITMQ_RETRY_QUEUE_TTL", cls.RABBITMQ_RETRY_QUEUE_TTL))
         
         if not mongodb_uri_val:
             msg = f"MONGODB_URI environment variable not set for {config_name_log}."
@@ -46,8 +56,6 @@ class BaseConfig:
         cls.RABBITMQ_URL = rabbitmq_url_val
         
         logger.info(f"Successfully loaded settings for {config_name_log} ✅")
-        logger.info(f"  MONGODB_URI: {cls.MONGODB_URI}")
-        logger.info(f"  MONGODB_DB: {cls.MONGODB_DB} (from env var '{db_env_var_key}')")
 
 # Add environment-specific config classes
 class ProdConfig(BaseConfig):

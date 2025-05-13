@@ -14,16 +14,10 @@ class LinkBusinessLogic:
 
     async def run_link(self, simulation_id, link: Link):
         self.logger.info(f"Running link for simulation {simulation_id}")
-        #fetch data
-        simulation = await self.simulation_db.get_simulation(simulation_id)
-        if not simulation:
-            self.logger.error(f"Simulation not found: {simulation_id}")
-            raise ValueError(f"Simulation not found: {simulation_id}")
         
+        #fetch data
+        simulation = await self.simulation_db.get_simulation(simulation_id)        
         meta_data = await self.simulation_meta_data_repo.get_by_sim_id(simulation_id)
-        if not meta_data:
-            self.logger.error(f"Meta data not found: {simulation_id}")
-            raise ValueError(f"Meta data not found: {simulation_id}")
         
         #validation
         await self.nodes_validator(simulation, link)
@@ -34,11 +28,11 @@ class LinkBusinessLogic:
 
     async def nodes_validator(self, simulation: Simulation, link: Link):
         if simulation.topology.nodes.count(link.from_node) == 0:
-            self.logger.error(f"Node not found: {link.from_node} in simulation {simulation.id}")
+            self.logger.error(f"Node not found: {link.from_node} in simulation {simulation.sim_id}")
             raise ValueError(f"Node {link.from_node} not found")
 
         if simulation.topology.nodes.count(link.to_node) == 0:
-            self.logger.error(f"Node not found: {link.to_node} in simulation {simulation.id}")
+            self.logger.error(f"Node not found: {link.to_node} in simulation {simulation.sim_id}")
             raise ValueError(f"Node {link.to_node} not found")
 
 

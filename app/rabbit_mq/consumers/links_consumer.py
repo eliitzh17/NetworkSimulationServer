@@ -25,6 +25,7 @@ class LinksConsumer(BaseConsumer):
             self.logger.info(f"[i] Link for simulation {data.get('sim_id')} done ✅")
         except Exception as e:
             self.logger.error(f"{self.__class__.__name__}[!] Error processing message: {e}", exc_info=True)
+            raise e
 
 async def main():
     config = get_config()

@@ -7,6 +7,8 @@ from app.utils.logger import LoggerManager
 from fastapi.middleware.cors import CORSMiddleware
 from app.rabbit_mq.rabbit_mq_client import RabbitMQClient
 from config import get_config
+from app.api.simulation_data import simulation_data_router
+from app.api.debug_api import debug_router
 
 main_logger = LoggerManager.get_logger('main')
 mongo_manager = MongoDBConnectionManager()
@@ -51,7 +53,8 @@ app.add_middleware(
 base_path = "/api"
 app.include_router(simulation_creator_router, prefix=base_path)
 app.include_router(simulation_management_router, prefix=base_path)
-
+app.include_router(simulation_data_router, prefix=base_path)
+app.include_router(debug_router, prefix=base_path)
 
 # Health check endpoint
 @app.get("/health")

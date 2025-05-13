@@ -1,0 +1,12 @@
+# app/instructions.ai
+# Responsibility: Main application code for the Network Simulation Server.
+# Contains all core logic, API endpoints, models, services, database integration, utilities, logging, and background workers.
+# Subfolders:
+# - api/: FastAPI route definitions and API logic
+# - core/: Core application logic and settings
+# - db/: Database integration and MongoDB access
+# - logger/: Logging configuration and utilities
+# - models/: Pydantic models and data schemas
+# - services/: Business logic and simulation management
+# - utils/: Utility functions and helpers
+# - workers/: Background workers (e.g., RabbitMQ consumers) 

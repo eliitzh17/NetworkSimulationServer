@@ -1,0 +1,3 @@
+# utils/instructions.ai
+# Responsibility: Utility functions and helper modules used throughout the application.
+# Includes a thread-safe, abstract logger implementation (see logger.py) using Loguru, following best practices for logging in Python applications. 

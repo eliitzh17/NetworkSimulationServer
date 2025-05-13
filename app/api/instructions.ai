@@ -1,0 +1,29 @@
+# api/instructions.ai
+# Responsibility: Contains FastAPI route definitions, request/response models, and API logic for the server.
+
+# FastAPI Route Definitions:
+#
+# 1. simulation_creator_api.py:
+#    - POST /create-simulations: Accepts a list of SimulationRequest objects, creates simulations, and returns their IDs.
+#    - POST /send-simulation-message: Accepts a SimulationRequest, creates and publishes a simulation, and returns its ID.
+#    - POST /send-link-message: Accepts a LinkBusMessage, publishes a link message, and returns a confirmation string.
+#    - GET /ping: Health check endpoint for the creator API.
+#
+# 2. simulation_management_api.py:
+#    - GET /ping: Health check endpoint for the management API.
+#
+# Request/Response Models:
+#
+# - SimulationRequest: Contains a Topology and optional Config for simulation creation.
+# - LinkBusMessage: Contains a simulation ID and a Link object.
+# - Topology: List of nodes and links (connections between nodes).
+# - Config: Simulation configuration (duration, packet loss, log level).
+#
+# API Logic:
+#
+# - Uses SimulationMapper to convert requests to Simulation objects.
+# - Uses SimulationBusinessLogic to handle simulation creation, storage, and publishing via RabbitMQ.
+# - Uses LinksPublisher to publish link messages to RabbitMQ.
+# - Logging is performed for each route and operation.
+#
+# Note: Placeholder endpoints and future extension points (e.g., authentication, additional models) are present in the code. 

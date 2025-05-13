@@ -1,0 +1,3 @@
+# db/instructions.ai
+# Responsibility: Database connection management and repository classes for MongoDB.
+# Now includes db_logger for logging all database actions. 

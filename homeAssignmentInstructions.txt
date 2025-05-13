@@ -1,0 +1,85 @@
+Network Simulation Server - Home Assignment
+
+Objective
+
+Build an asynchronous server using Python + FastAPI that simulates network topologies. The system must:
+
+Accept network topologies and configurations
+Validate topologies
+Start and manage multiple independent simulations concurrently
+Track the lifecycle status of each simulation
+Provide control over simulations (edit, stop, restart)
+Retry failed operations with exponential backoff
+Support an asynchronous client to interact with the server
+Optionally: provide Docker and Kubernetes deployment setup
+
+Deliverables
+
+FastAPI server code with modular structure (app/, models/, simulation_manager/, etc.)
+Async Python client to communicate with the server
+Topology example(s)
+README file with setup and usage instructions
+(Optional) Dockerfile and Kubernetes manifests
+
+Simulation Model
+
+Each simulation must be identified by a unique sim_id and maintain its own:
+
+Topology (nodes and links)
+Configuration (duration, packet loss, etc.)
+Async simulation task
+Retry count
+Status, which can be one of:
+pending: accepted, not yet started
+running: simulation is active
+paused: paused (optional support)
+stopped: manually stopped
+done: completed after running duration
+failed: unrecoverable error or max retries reached
+
+Status transitions must be tracked and reflected accurately via the API.
+
+Example Input: Topology + Config
+
+{ "topology": { "nodes": ["A", "B", "C"], "links": [ {"from": "A", "to": "B", "latency": 10}, {"from": "B", "to": "C", "latency": 15} ] }, "config": { "duration_sec": 60, "packet_loss_percent": 0.1, "log_level": "info" } }
+
+Default config (if omitted):
+
+{ "duration_sec": 30, "packet_loss_percent": 0.0, "log_level": "warning" }
+
+Required Features
+
+The server and simulation state must be persistent across operations and designed to avoid race conditions or data corruption when managing concurrent simulations.
+
+Asynchronous server using FastAPI
+Async task management
+Input validation
+Simulation lifecycle with status tracking
+Retry logic with exponential backoff (max 3 attempts)
+Simultaneous support for multiple simulations
+Async client
+Structured, maintainable project layout
+
+API Endpoints
+
+POST /simulate: Start a new simulation
+GET /status/{sim_id}: Get current status + metadata
+POST /stop/{sim_id}: Stop a running simulation
+POST /restart/{sim_id}: Restart a simulation
+
+Each operation must retry on transient failure (except validation errors).
+
+Bonus Features
+
+PUT /edit/{sim_id}: Modify a running simulation by performing one of: add_router, remove_router, add_link, remove_link
+Dockerfile to containerize the server/client
+docker-compose.yml for local orchestration
+Kubernetes manifests (e.g., deployment.yaml, service.yaml)
+Visualization or logging extensions
+
+How to Submit
+
+Host on GitHub/GitLab or send a ZIP archive
+Include clear instructions in the README
+Add sample input files and notes on assumptions
+

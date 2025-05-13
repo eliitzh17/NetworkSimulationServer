@@ -1,0 +1,60 @@
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
+from app.api.simulation_creator_api import simulation_creator_router
+from app.api.simulation_management_api import simulation_management_router
+from app.db.mongo_db_client import MongoDBConnectionManager
+from app.utils.logger import LoggerManager
+from fastapi.middleware.cors import CORSMiddleware
+from app.rabbit_mq.rabbit_mq_client import RabbitMQClient
+from config import get_config
+
+main_logger = LoggerManager.get_logger('main')
+mongo_manager = MongoDBConnectionManager()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    try:
+        config = get_config()
+        main_logger.info("Starting application...")
+        await mongo_manager.connect()
+        app.state.db = mongo_manager.db
+        main_logger.info("MongoDB connected and repository initialized.")
+        app.state.rabbit_mq_client = RabbitMQClient(config.RABBITMQ_URL)
+        yield
+    finally:
+        try:
+            main_logger.info("Shutting down application...")
+            await mongo_manager.close()
+            main_logger.info("MongoDB connection closed.")
+        except Exception as e:
+            main_logger.error(f"Error during shutdown: {str(e)}")
+
+# app = FastAPI(lifespan=lifespan)
+
+app = FastAPI(
+    title="Simulation API",
+    description="API for managing simulations",
+    version="1.0.0",
+    lifespan=lifespan
+)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+# Include our endpoints
+base_path = "/api"
+app.include_router(simulation_creator_router, prefix=base_path)
+app.include_router(simulation_management_router, prefix=base_path)
+
+
+# Health check endpoint
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy"} 
+

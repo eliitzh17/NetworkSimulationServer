@@ -1,0 +1,2 @@
+# models/instructions.ai
+# Responsibility: Pydantic models and data schemas for request/response validation and internal data structures. 

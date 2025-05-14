@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: simulation_api
+    command: [ "uvicorn", "app.asgi:app", "--host", "0.0.0.0", "--port", "8000" ]
+    env_file:
+      - ../.env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - rabbitmq
+      - mongo
+
+  handle_links_worker:
+    build: .
+    container_name: handle_links_worker
+    command: [ "python", "app/workers/handle_links_worker.py" ]
+    env_file:
+      - ../.env
+    depends_on:
+      - rabbitmq
+      - mongo
+
+  handle_simulation_worker:
+    build: .
+    container_name: handle_simulation_worker
+    command: [ "python", "app/workers/handle_simualtion_worker.py" ]
+    env_file:
+      - ../.env
+    depends_on:
+      - rabbitmq
+      - mongo
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example

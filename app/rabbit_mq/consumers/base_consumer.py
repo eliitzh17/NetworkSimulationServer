@@ -6,7 +6,7 @@ from aiormq.exceptions import ChannelInvalidStateError
 import traceback
 import asyncio
 from config import get_config
-
+import os
 class BaseConsumer:
     def __init__(self, db, rabbit_mq_client: RabbitMQClient, logger, exchange_name, queue_name, exchange_type=ExchangeType.FANOUT):
         self.db = db
@@ -53,24 +53,28 @@ class BaseConsumer:
         )
 
     async def _declare_retry_queue(self, retry_queue_name, dlx):
+        args = {
+            'x-dead-letter-exchange': self.exchange_name,
+            'x-message-ttl': self.retry_queue_ttl
+        }
+        if self.queue_name:
+            args['x-dead-letter-routing-key'] = self.queue_name
         return await self.channel.declare_queue(
             retry_queue_name,
             durable=True,
-            arguments={
-                'x-dead-letter-exchange': self.exchange_name,
-                'x-dead-letter-routing-key': self.queue_name,
-                'x-message-ttl': self.retry_queue_ttl
-            }
+            arguments=args
         )
 
     async def _declare_main_queue(self, dlx_name):
+        args = {
+            'x-dead-letter-exchange': dlx_name
+        }
+        if self.queue_name:
+            args['x-dead-letter-routing-key'] = self.queue_name
         return await self.channel.declare_queue(
             self.queue_name,
             durable=True,
-            arguments={
-                'x-dead-letter-exchange': dlx_name,
-                'x-dead-letter-routing-key': self.queue_name
-            }
+            arguments=args
         )
 
     async def start(self):
@@ -84,8 +88,11 @@ class BaseConsumer:
         return self.connection
 
     async def _setup_connection_and_channel(self):
+        self.logger.info(f"Setting up connection and channel for {self.__class__.__name__} with prefetch count {os.getenv('RABBITMQ_PREFETCH_COUNT')}")
         self.connection = await self.rabbit_mq_client.get_connection()
         self.channel = await self.rabbit_mq_client.get_channel()
+        # Set prefetch count for parallelism
+        await self.channel.set_qos(prefetch_count=os.getenv('RABBITMQ_PREFETCH_COUNT'))
 
     async def verify_connection(self):
         if self.connection.is_closed:
@@ -97,15 +104,14 @@ class BaseConsumer:
     async def on_message(self, message: aio_pika.IncomingMessage):
         self.logger.info(f" [*] Received new message for {self.__class__.__name__}")
         try:
-            await self.verify_connection()
             async with message.process():
-                data = self._parse_message_body(message)
                 retry_count = self._get_retry_count(message)
                 if self._exceeded_max_retries(retry_count):
                     self.logger.error(f"Message exceeded maximum retry attempts ({self.max_retries})")
                     return
                 try:
-                    await self.process_message(data)
+                    await self.process_message(message)
+                    self.logger.info(f"✅ Message processed successfully by {self.__class__.__name__}")
                 except Exception as e:
                     await self._handle_processing_error(e, message, retry_count)
         except ChannelInvalidStateError as e:
@@ -123,7 +129,8 @@ class BaseConsumer:
 
     def _exceeded_max_retries(self, retry_count):
         return retry_count >= self.max_retries
-
+    
+    #there might be 
     async def _handle_processing_error(self, error, message, retry_count):
         self.logger.error(f"Error processing message: {error}")
         delay = self.retry_delay * (2 ** retry_count)
@@ -141,5 +148,7 @@ class BaseConsumer:
             routing_key=f"{self.queue_name}{self.retry_queue_suffix}"
         )
 
-    async def process_message(self, data):
-        raise NotImplementedError("Subclasses must implement process_message()") 
+#not like that why like this?
+    async def process_message(self, data, retry_count=None):
+        raise NotImplementedError("Subclasses must implement process_message()")
+

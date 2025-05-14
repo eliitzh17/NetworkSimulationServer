@@ -2,8 +2,10 @@ from app.models.requests_models import SimulationRequest
 from app.models.mapper import SimulationMapper
 from app.core.simulation_bl import SimulationBusinessLogic
 from app.utils.logger import LoggerManager
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Depends
 from typing import List
+from app import container
+from app.api.dependencies import get_mongo_manager, get_rabbitmq_client
 
 logger = LoggerManager.get_logger("simulation_management_api")
 
@@ -12,8 +14,12 @@ simulation_management_router = APIRouter()
 logger.info("simulation_management_api router initialized")
 
 @simulation_management_router.post("/restart/{simulation_id}", summary="Restart a simulation", tags=["simulation_management"])
-async def restart_simulation(simulation_id: str, request: Request) -> str:
-    simulation_manager = SimulationBusinessLogic(request.app.state.db)
+async def restart_simulation(
+    simulation_id: str,
+    db=Depends(get_mongo_manager),
+    rabbitmq_client=Depends(get_rabbitmq_client),
+) -> str:
+    simulation_manager = SimulationBusinessLogic(db, rabbitmq_client)
     await simulation_manager.run_simulation(simulation_id)
     logger.info(f"Will run simulation {simulation_id}")
     return {"message": f"Simulation {simulation_id} re-run successfully"}

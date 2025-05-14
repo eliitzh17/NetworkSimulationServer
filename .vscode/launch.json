@@ -18,10 +18,22 @@
             "module": "app.rabbit_mq.consumers.simulations_consumer"
         },
         {
-            "name": "Links Consumer",
+            "name": "Handle In Post Link Worker",
             "type": "debugpy",
             "request": "launch",
-            "module": "app.rabbit_mq.consumers.links_consumer"
+            "module": "app.workers.handle_in_post_link_worker"
+        },
+        {
+            "name": "Handle Links Worker",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "app.workers.handle_links_worker"
+        },
+        {
+            "name": "Handle Simulation Worker",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "app.workers.handle_simualtion_worker"
         }
     ]
 }

@@ -1,2 +1,5 @@
 aio-pika
 aiormq
+python-dotenv
+fastapi
+dependency-injector

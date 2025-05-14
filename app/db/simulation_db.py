@@ -19,7 +19,7 @@ class SimulationDB:
 
     async def store_simulation(self, simulation: Simulation) -> str:
         try:
-            doc = simulation.model_dump(by_alias=True)
+            doc = simulation.model_dump()
             doc["created_at"] = datetime.now(UTC)
             doc["updated_at"] = datetime.now(UTC)
             result = await self.collection.insert_one(doc)
@@ -50,11 +50,12 @@ class SimulationDB:
             self.db_logger.error(f"Unexpected error while fetching simulation {sim_id}: {str(e)}")
             raise ValidationError(f"Error processing simulation data: {str(e)}") from e
 
-    async def update(self, sim_id: str, update_data: dict) -> bool:
+    async def update(self, sim_id: str, update_data: Simulation) -> bool:
         try:
-            update_data["updated_at"] = datetime.now(UTC)
+            update_dict = update_data.model_dump()
+            update_dict["updated_at"] = datetime.now(UTC)
             result = await self.collection.update_one(
-                {"sim_id": sim_id}, {"$set": update_data}
+                {"sim_id": sim_id}, {"$set": update_dict}
             )
             if result.modified_count > 0:
                 self.db_logger.info(f"Updated simulation with id {sim_id}")

@@ -10,10 +10,10 @@ class Link(BaseModel):
     Fields:
         - from_node: Source node name (aliased from 'from')
         - to_node: Destination node name (aliased from 'to')
-        - latency: Link latency in milliseconds
+        - latency: Link latency in seconds
     """
     from_node: str 
-    to_node: str 
+    to_node: str
     latency: int
     
 class LinkBusMessage(BaseModel):
@@ -49,18 +49,28 @@ class Config(BaseModel):
     log_level: Literal["debug", "info", "warning", "error"] = "warning"
     
 class SimulationMetaData(BaseModel):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
+    
+    #identification
+    id: str = Field(default_factory=lambda: str(uuid.uuid4()))#let you db do it
     sim_id: str
+    
+    #time
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
-    current_time: Optional[datetime] = None
+    current_time: Optional[datetime] = None#argue about it
     total_execution_time: int = 0
+    
+    #links
+    processed_links: int = 0
+    failed_links: int = 0
+    success_links: int = 0
+    
+    #machine info
     os: str
     machine_id: str
     machine_name: str
     machine_ip: str
     machine_port: int
-    total_packets: int
 
 class Simulation(BaseModel):
     """

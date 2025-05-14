@@ -7,18 +7,7 @@ from app.utils.logger import LoggerManager
 logger = LoggerManager.get_logger('simulation_utils')
 
 @staticmethod
-def create_simulation_metadata(sim_id: str, 
-                              total_packets: int = 0) -> SimulationMetaData:
-    """
-    Creates a SimulationMetaData object populated with system information.
-    
-    Args:
-        simulation: The Simulation object to associate metadata with
-        total_packets: Total number of packets processed in the simulation
-        
-    Returns:
-        A populated SimulationMetaData object
-    """
+def create_simulation_metadata(sim_id: str) -> SimulationMetaData:
     # Get system information
     system_info = get_system_info()
     
@@ -29,12 +18,14 @@ def create_simulation_metadata(sim_id: str,
         end_time=None,
         current_time=None,
         total_execution_time=0,
+        processed_links=0,
+        failed_links=0,
+        success_links=0,
         os=system_info["os"],
         machine_id=system_info["machine_id"],
         machine_name=system_info["machine_name"],
         machine_ip=system_info["machine_ip"],
         machine_port=system_info["machine_port"],
-        total_packets=total_packets
     )
     
     logger.info(f"Created simulation metadata for sim_id={sim_id}, "

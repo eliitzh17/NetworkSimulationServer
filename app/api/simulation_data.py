@@ -1,6 +1,7 @@
 from app.utils.logger import LoggerManager
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Depends
 from typing import List
+from app.api.dependencies import get_mongo_manager, get_rabbitmq_client
 
 logger = LoggerManager.get_logger("simulation_data")
 simulation_data_router = APIRouter()
@@ -20,5 +21,5 @@ async def get_simulation_meta_data(simulation_id: str) -> str:
     
     
 @simulation_data_router.get("/get-all-simulations-in-status/{status}", summary="Get all new simulations")
-async def get_all_new_simulations(status: str, request: Request) -> List[str]:
+async def get_all_new_simulations(status: str) -> List[str]:
     logger.info("Will get all new simulations")

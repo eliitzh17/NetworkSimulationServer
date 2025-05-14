@@ -104,7 +104,7 @@ class SimulationMetaDataDB:
             self.db_logger.error(f"Unexpected error while fetching metadata for sim_id {sim_id}: {str(e)}")
             raise ValidationError(f"Error processing metadata: {str(e)}") from e
 
-    async def update(self, id: str, update_data: dict) -> bool:
+    async def update(self, id: str, update_data: SimulationMetaData) -> bool:
         """
         Update simulation metadata fields.
         
@@ -120,9 +120,10 @@ class SimulationMetaDataDB:
             DatabaseError: If a database operation fails
         """
         try:
-            update_data["updated_at"] = datetime.now(UTC)
+            update_dict = update_data.model_dump()
+            update_dict["updated_at"] = datetime.now(UTC)
             result = await self.collection.update_one(
-                {"id": id}, {"$set": update_data}
+                {"id": id}, {"$set": update_dict}
             )
             if result.modified_count > 0:
                 self.db_logger.info(f"Updated simulation metadata with id {id}")

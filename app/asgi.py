@@ -9,19 +9,20 @@ from app.rabbit_mq.rabbit_mq_client import RabbitMQClient
 from config import get_config
 from app.api.simulation_data import simulation_data_router
 from app.api.debug_api import debug_router
+from app import container
 
 main_logger = LoggerManager.get_logger('main')
-mongo_manager = MongoDBConnectionManager()
+mongo_manager = container.mongo_manager()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        config = get_config()
+        config = container.config()
         main_logger.info("Starting application...")
         await mongo_manager.connect()
+        await mongo_manager.ensure_indexes()
         app.state.db = mongo_manager.db
         main_logger.info("MongoDB connected and repository initialized.")
-        app.state.rabbit_mq_client = RabbitMQClient(config.RABBITMQ_URL)
         yield
     finally:
         try:

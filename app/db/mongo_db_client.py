@@ -29,6 +29,29 @@ class MongoDBConnectionManager:
         except Exception as e:
             self.db_logger.error(f"Failed to connect to MongoDB: {str(e)}")
             raise DatabaseError(f"Could not connect to MongoDB: {str(e)}") from e
+        
+    async def ensure_indexes(self):
+        try:
+            # Ensure unique index on sim_id for simulations collection
+            await self.db["simulations"].create_index(
+                [("sim_id", 1)], unique=True, name="sim_id_unique_idx"
+            )
+            self.db_logger.info("Ensured unique index on 'sim_id' for 'simulations' collection.")
+
+            # Ensure unique index on id for simulation_meta_data collection
+            await self.db["simulation_meta_data"].create_index(
+                [("id", 1)], unique=True, name="meta_id_unique_idx"
+            )
+            self.db_logger.info("Ensured unique index on 'id' for 'simulation_meta_data' collection.")
+
+            # Ensure unique index on sim_id for simulation_meta_data collection
+            await self.db["simulation_meta_data"].create_index(
+                [("sim_id", 1)], name="meta_sim_id_unique_idx"
+            )
+            self.db_logger.info("Ensured unique index on 'sim_id' for 'simulation_meta_data' collection.")
+        except Exception as e:
+            self.db_logger.error(f"Error ensuring indexes: {str(e)}")
+            raise DatabaseError(f"Could not ensure indexes: {str(e)}") from e
 
     async def close(self):
         try:
@@ -38,9 +61,3 @@ class MongoDBConnectionManager:
         except Exception as e:
             self.db_logger.error(f"Error while closing MongoDB connection: {str(e)}")
             # No need to re-raise here as this is a cleanup operation
-
-    def get_collection(self, collection_name=COLLECTION_NAME):
-        if not self.client or not self.db:
-            self.db_logger.error("Attempted to get collection without an established connection")
-            raise DatabaseError("MongoDB connection not established. Call connect() first.")
-        return self.db[collection_name]

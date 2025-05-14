@@ -39,7 +39,7 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t network-simulation-server .
+          docker build -t network-simulation-server -f deployment/Dockerfile .
 
       - name: Run tests (pytest)
         run: |

@@ -86,7 +86,6 @@ class Simulation(BaseModel):
     topology: Topology
     config: Config
     status: Optional[TopologyStatusEnum] = TopologyStatusEnum.pending
-    retry_count: int = 3
     meta_data_id: str = None
     # Optionally, you can add status_history: List[StatusEnum] = [] 
     

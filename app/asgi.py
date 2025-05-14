@@ -2,12 +2,9 @@ from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.api.simulation_creator_api import simulation_creator_router
 from app.api.simulation_management_api import simulation_management_router
-from app.db.mongo_db_client import MongoDBConnectionManager
 from app.utils.logger import LoggerManager
 from fastapi.middleware.cors import CORSMiddleware
-from app.rabbit_mq.rabbit_mq_client import RabbitMQClient
-from config import get_config
-from app.api.simulation_data import simulation_data_router
+from app.api.simulation_data_api import simulation_data_router
 from app.api.debug_api import debug_router
 from app import container
 

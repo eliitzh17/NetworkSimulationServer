@@ -2,7 +2,7 @@
 
 Network Simulation Server
 
-[![Build](https://img.shields.io/github/actions/workflow/status/your-org/your-repo/ci.yml)](https://github.com/your-org/your-repo/actions)
+[![Build](https://github.com/eliitzh17/NetworkSimulationServer/actions/workflows/ci.yml/badge.svg)](https://github.com/eliitzh17/NetworkSimulationServer/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Docker Pulls](https://img.shields.io/docker/pulls/your-image)](https://hub.docker.com/r/your-image)
 
@@ -404,8 +404,8 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Contact & Community
 
-- **Issues**: [GitHub Issues](https://github.com/your-org/network-simulation-server/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/network-simulation-server/discussions)
+- **Issues**: [GitHub Issues](https://github.com/eliitzh17/NetworkSimulationServer/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/eliitzh17/NetworkSimulationServer/discussions)
 - **Email**: <your.email@example.com>
 - **Docs**: [API Docs](http://localhost:9090/docs)
 

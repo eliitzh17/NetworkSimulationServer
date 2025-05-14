@@ -1,0 +1,158 @@
+[
+    {
+        "topology": {
+            "nodes": [
+                "A",
+                "B",
+                "C"
+            ],
+            "links": [
+                {
+                    "from_node": "A",
+                    "to_node": "B",
+                    "latency": 10
+                },
+                {
+                    "from_node": "B",
+                    "to_node": "C",
+                    "latency": 15
+                }
+            ]
+        },
+        "config": {
+            "duration_sec": 60,
+            "packet_loss_percent": 0.1,
+            "log_level": "info"
+        }
+    },
+    {
+        "topology": {
+            "nodes": [
+                "X",
+                "Y",
+                "Z"
+            ],
+            "links": [
+                {
+                    "from_node": "X",
+                    "to_node": "Y",
+                    "latency": 5
+                },
+                {
+                    "from_node": "Y",
+                    "to_node": "Z",
+                    "latency": 20
+                },
+                {
+                    "from_node": "Z",
+                    "to_node": "X",
+                    "latency": 25
+                }
+            ]
+        },
+        "config": {
+            "duration_sec": 120,
+            "packet_loss_percent": 0.5,
+            "log_level": "debug"
+        }
+    },
+    {
+        "topology": {
+            "nodes": [
+                "N1",
+                "N2",
+                "N3",
+                "N4"
+            ],
+            "links": [
+                {
+                    "from_node": "N1",
+                    "to_node": "N2",
+                    "latency": 8
+                },
+                {
+                    "from_node": "N2",
+                    "to_node": "N3",
+                    "latency": 12
+                },
+                {
+                    "from_node": "N3",
+                    "to_node": "N4",
+                    "latency": 18
+                },
+                {
+                    "from_node": "N4",
+                    "to_node": "N1",
+                    "latency": 22
+                }
+            ]
+        },
+        "config": {
+            "duration_sec": 90,
+            "packet_loss_percent": 1.0,
+            "log_level": "warning"
+        }
+    },
+    {
+        "topology": {
+            "nodes": [
+                "S",
+                "T"
+            ],
+            "links": [
+                {
+                    "from_node": "S",
+                    "to_node": "T",
+                    "latency": 3
+                }
+            ]
+        },
+        "config": {
+            "duration_sec": 30,
+            "packet_loss_percent": 0.0,
+            "log_level": "error"
+        }
+    },
+    {
+        "topology": {
+            "nodes": [
+                "A",
+                "B",
+                "C",
+                "D"
+            ],
+            "links": [
+                {
+                    "from_node": "A",
+                    "to_node": "B",
+                    "latency": 7
+                },
+                {
+                    "from_node": "B",
+                    "to_node": "C",
+                    "latency": 14
+                },
+                {
+                    "from_node": "C",
+                    "to_node": "D",
+                    "latency": 21
+                },
+                {
+                    "from_node": "D",
+                    "to_node": "A",
+                    "latency": 28
+                },
+                {
+                    "from_node": "A",
+                    "to_node": "C",
+                    "latency": 10
+                }
+            ]
+        },
+        "config": {
+            "duration_sec": 180,
+            "packet_loss_percent": 2.5,
+            "log_level": "info"
+        }
+    }
+]

@@ -1,2 +1,0 @@
-# deployment/instructions.ai
-# Responsibility: Contains deployment-related files such as Dockerfile, docker-compose.yml, and Kubernetes manifests for containerization and orchestration. 

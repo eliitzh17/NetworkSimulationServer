@@ -1,3 +1,0 @@
-# client/instructions.ai
-# Responsibility: Contains the asynchronous Python client for interacting with the FastAPI server.
-# Should include client logic, models, and utilities for API communication. 

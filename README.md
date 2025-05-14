@@ -73,8 +73,8 @@ flowchart LR
     API[FastAPI Server]
     MQ[RabbitMQ]
     DB[MongoDB]
-    Worker1[Simulation Worker(s)]
-    Worker2[Link Worker(s)]
+    Worker1[Simulation Worker]
+    Worker2[Link Worker]
 
     Client -- HTTP --> API
     API -- Mongo Queries --> DB

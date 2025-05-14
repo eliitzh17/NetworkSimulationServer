@@ -1,53 +1,97 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  api:
-    build: .
-    container_name: simulation_api
-    command: [ "uvicorn", "app.asgi:app", "--host", "0.0.0.0", "--port", "8000" ]
+  app:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    container_name: network-simulation-server
     env_file:
       - ../.env
+    environment:
+      # Override or add environment variables here if needed
+      MONGODB_URI: "mongodb://mongo:27017"
+      MONGODB_DB: "network_sim_db"
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+      # Add other environment variables as needed
+    depends_on:
+      - mongo
+      - rabbitmq
     ports:
-      - "8000:8000"
-    depends_on:
-      - rabbitmq
-      - mongo
-
-  handle_links_worker:
-    build: .
-    container_name: handle_links_worker
-    command: [ "python", "app/workers/handle_links_worker.py" ]
-    env_file:
-      - ../.env
-    depends_on:
-      - rabbitmq
-      - mongo
+      - "9090:9090"
+    restart: unless-stopped
+    command: [ "python", "main.py" ]
 
   handle_simulation_worker:
-    build: .
-    container_name: handle_simulation_worker
-    command: [ "python", "app/workers/handle_simualtion_worker.py" ]
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
     env_file:
       - ../.env
+    environment:
+      PYTHONPATH: /app
+      MONGODB_URI: "mongodb://mongo:27017"
+      MONGODB_DB: "network_sim_db"
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
     depends_on:
-      - rabbitmq
       - mongo
+      - rabbitmq
+    restart: unless-stopped
+    command: [ "python", "app/workers/handle_simulation_worker.py" ]
+
+  handle_links_worker:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      PYTHONPATH: /app
+      MONGODB_URI: "mongodb://mongo:27017"
+      MONGODB_DB: "network_sim_db"
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+    depends_on:
+      - mongo
+      - rabbitmq
+    restart: unless-stopped
+    command: [ "python", "app/workers/handle_links_worker.py" ]
+
+  handle_in_post_link_worker:
+    build:
+      context: ..
+      dockerfile: deployment/Dockerfile
+    env_file:
+      - ../.env
+    environment:
+      PYTHONPATH: /app
+      MONGODB_URI: "mongodb://mongo:27017"
+      MONGODB_DB: "network_sim_db"
+      RABBITMQ_URL: "amqp://guest:guest@rabbitmq:5672/"
+    depends_on:
+      - mongo
+      - rabbitmq
+    restart: unless-stopped
+    command: [ "python", "app/workers/handle_in_post_link_worker.py" ]
+
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
 
   rabbitmq:
-    image: rabbitmq:3-management
+    image: rabbitmq:3.12-management
     container_name: rabbitmq
+    restart: unless-stopped
     ports:
       - "5672:5672"
-      - "15672:15672"
+      - "15672:15672" # Management UI
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
 
-  mongo:
-    image: mongo:6
-    container_name: mongo
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
+volumes:
+  mongo_data:

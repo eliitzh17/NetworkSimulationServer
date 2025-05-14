@@ -3,3 +3,11 @@ aiormq
 python-dotenv
 fastapi
 dependency-injector
+uvicorn
+motor
+loguru
+pydantic
+# Optional, for visualization scripts:
+# matplotlib
+# networkxsf
+pandas

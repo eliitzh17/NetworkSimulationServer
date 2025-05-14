@@ -1,23 +1,48 @@
-# syntax=docker/dockerfile:1
+# ---- Build stage ----
+FROM python:3.11-slim AS builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends build-essential
+
+# Set work directory
+WORKDIR /app
+
+# Install pipenv or pip-tools if you use them (optional)
+# RUN pip install pipenv
+
+# Copy requirements first for better cache
+COPY requirements.txt .
+
+# Install dependencies to a virtual environment in /install
+RUN pip install --upgrade pip && \
+    pip install --prefix=/install -r requirements.txt
+
+# ---- Final stage ----
 FROM python:3.11-slim
+
+# Create a non-root user
+RUN useradd -m appuser
 
 WORKDIR /app
 
-# Install system dependencies (if needed)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install Python dependencies
-COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy installed dependencies from builder
+COPY --from=builder /install /usr/local
 
 # Copy application code
-COPY app ./app
-COPY config.py ./config.py
+COPY . .
 
-# Copy .env if present (optional, for local dev)
-COPY .env .env
+# Set permissions
+RUN chown -R appuser:appuser /app
 
-# Default command (can be overridden in docker-compose)
-CMD ["uvicorn", "app.asgi:app", "--host", "0.0.0.0", "--port", "8000"]
+# Switch to non-root user
+USER appuser
+
+# Expose FastAPI port
+EXPOSE 9090
+
+# Set environment variables (override in docker-compose or k8s)
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1
+
+# Entrypoint: run main app and all workers
+CMD ["python", "run_all.py"]

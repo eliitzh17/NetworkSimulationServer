@@ -7,8 +7,6 @@ from datetime import datetime
 from app.rabbit_mq.publishers.simulations_publisher import SimulationsPublisher
 from app.rabbit_mq.publishers.links_publisher import LinksPublisher
 from app.models.simulation_models import LinkBusMessage
-from app.rabbit_mq.rabbit_mq_client import RabbitMQClient
-from config import get_config
 from app.core.validator_bl import ValidatorBusinessLogic
 
 class SimulationBusinessLogic:
@@ -43,12 +41,12 @@ class SimulationBusinessLogic:
         
         #update status
         simulation.status = TopologyStatusEnum.running
-        await self.simulation_db.update(simulation.sim_id, simulation.model_dump())
+        await self.simulation_db.update(simulation.sim_id, simulation)
         
         #update time
         meta_data.start_time = datetime.now()
         meta_data.current_time = datetime.now()
-        await self.simulation_meta_data_db.update(meta_data.id, meta_data.model_dump())
+        await self.simulation_meta_data_db.update(meta_data.id, meta_data)
 
         #run links
         links_publisher = LinksPublisher(self.rabbitmq_client)
@@ -68,8 +66,8 @@ class SimulationBusinessLogic:
         meta_data = await self.simulation_meta_data_db.get_by_sim_id(id)
         meta_data.end_time = datetime.now()
         meta_data.total_execution_time = meta_data.end_time - meta_data.start_time
-        await self.simulation_meta_data_db.update(meta_data.id, meta_data.model_dump())
-        await self.simulation_db.update(simulation.sim_id, simulation.model_dump())
+        await self.simulation_meta_data_db.update(meta_data.id, meta_data)
+        await self.simulation_db.update(simulation.sim_id, simulation)
         
     async def mark_simulation_as_paused(self, id):
         simulation = await self.simulation_db.get_simulation(id)

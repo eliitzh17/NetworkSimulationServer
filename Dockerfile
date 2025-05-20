@@ -38,7 +38,7 @@ RUN chown -R appuser:appuser /app
 USER appuser
 
 # Expose FastAPI port
-EXPOSE 9090
+EXPOSE 9090 9091 9092 9093
 
 # Set environment variables (override in docker-compose or k8s)
 ENV PYTHONUNBUFFERED=1 \

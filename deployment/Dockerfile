@@ -44,5 +44,5 @@ EXPOSE 9090
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1
 
-# Entrypoint: run main app and all workers
-CMD ["python", "run_all.py"]
+# Entrypoint: run main app
+CMD ["python", "main.py"]

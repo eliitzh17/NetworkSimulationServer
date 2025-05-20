@@ -7,11 +7,12 @@ async def run_worker(consumer_class, logger_name, consumer_args=None):
     Generic worker runner for consumers.
     :param consumer_class: The consumer class to instantiate (e.g., SimulationConsumer, LinksConsumer)
     :param logger_name: Logger name for this worker
-    :param consumer_args: Dict of extra args for the consumer constructor (besides db, rabbit_mq_client, logger)
+    :param consumer_args: Dict of extra args for the consumer constructor (besides db, rabbit_mq_client, logger). To set a different port for each worker, include a 'port' key in this dict.
     """
     config = container.config()
     logger = LoggerManager.get_logger(logger_name)
-    logger.info(f"Starting {logger_name} worker")
+    port = consumer_args.get('port') if consumer_args else None
+    logger.info(f"Starting {logger_name} worker" + (f" on port {port}" if port else ""))
     mongo_manager = container.mongo_manager()
     connection = None
     try:

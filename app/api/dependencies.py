@@ -13,8 +13,8 @@ async def get_mongo_manager(with_transaction: bool = False):
         db, session = Depends(partial(get_mongo_manager, with_transaction=True))
     """
     mongo_manager = container.mongo_manager()
-    await mongo_manager.connect()
-    logger.info("MongoDB connection established via dependency.")
+    # Connection is now managed at app startup/shutdown
+    logger.info("MongoDB connection provided via dependency.")
     session = None
     if with_transaction:
         session = await mongo_manager.client.start_session()
@@ -37,8 +37,6 @@ async def get_mongo_manager(with_transaction: bool = False):
         if with_transaction and session:
             await session.end_session()
             logger.info("MongoDB session ended.")
-        await mongo_manager.close()
-        logger.info("MongoDB connection closed via dependency.")
 
 async def get_rabbitmq_client():
     rabbitmq_client = container.rabbitmq_client()

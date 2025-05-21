@@ -17,12 +17,9 @@ async def run_worker(consumer_class, logger_name, port, consumer_args=None):
     if port is None:
         raise ValueError("port is required")
     
-    start_health_server(port=port)
-
-    health_url = f"http://localhost:{port}/health"
+    health_url = start_health_server(port=port, host="auto")
     logger.info(f"[HEALTH] {logger_name} health check available at: {health_url}")
     
-
     mongo_manager = container.mongo_manager()
     connection = None
     try:

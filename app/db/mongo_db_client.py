@@ -61,3 +61,16 @@ class MongoDBConnectionManager:
         except Exception as e:
             self.db_logger.error(f"Error while closing MongoDB connection: {str(e)}")
             # No need to re-raise here as this is a cleanup operation
+
+    async def is_connected(self):
+        """
+        Checks if the MongoDB client is connected by attempting a ping.
+        Returns True if connected, False otherwise.
+        """
+        if self.client is None:
+            return False
+        try:
+            await self.client.admin.command('ping')
+            return True
+        except Exception:
+            return False

@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Generic, TypeVar
 from app.models.statuses_enums import LinkStatusEnum, TopologyStatusEnum
 from datetime import datetime
 import uuid
@@ -94,4 +94,17 @@ class Simulation(BaseModel):
 #     sim_id: str
 #     status: TopologyStatusEnum
     
+T = TypeVar('T')
+
+class PaginationResponse(BaseModel):
+    items: List[Simulation]
+    total: int
+    page: int
+    page_size: int
+
+class CursorPaginationResponse(BaseModel):
+    items: List[Simulation]
+    next_cursor: Optional[str]
+    page_size: int
+    total: Optional[int] = None
 

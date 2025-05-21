@@ -1,6 +1,6 @@
 from app import container
 from app.utils.logger import LoggerManager
-
+from contextlib import asynccontextmanager
 logger = LoggerManager.get_logger('mongo_dependency')
 
 async def get_mongo_manager(with_transaction: bool = False):
@@ -13,11 +13,10 @@ async def get_mongo_manager(with_transaction: bool = False):
         db, session = Depends(partial(get_mongo_manager, with_transaction=True))
     """
     mongo_manager = container.mongo_manager()
-    logger.info("MongoDB connection not established, connecting...")
-    await mongo_manager.connect()
-    # Connection is now managed at app startup/shutdown
-    logger.info("MongoDB connection provided via dependency.")
-    session = None
+    if not (await mongo_manager.is_connected()):
+        logger.info("MongoDB connection not established, connecting...")
+        await mongo_manager.connect()
+
     if with_transaction:
         session = await mongo_manager.client.start_session()
         await session.start_transaction()
@@ -38,9 +37,7 @@ async def get_mongo_manager(with_transaction: bool = False):
     finally:
         if with_transaction and session:
             await session.end_session()
-            logger.info("MongoDB session ended.")
-        await mongo_manager.close()
-        logger.info("MongoDB connection closed via dependency.")
+            logger.info("MongoDB session ended.")        
 
 async def get_rabbitmq_client():
     rabbitmq_client = container.rabbitmq_client()

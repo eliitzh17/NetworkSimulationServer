@@ -1,9 +1,17 @@
 import asyncio
 from app.utils.logger import LoggerManager
 from app import container
-from app.utils.health_server import start_health_server
+import uvicorn
+from fastapi import FastAPI
+from fastapi.responses import JSONResponse
 
-async def run_worker(consumer_class, logger_name, port, consumer_args=None):
+app = FastAPI()
+
+@app.get("/health")
+def health_check():
+    return JSONResponse(content={"status": "ok"})
+
+async def run_worker(consumer_class, logger_name, consumer_args=None):
     """
     Generic worker runner for consumers.
     :param consumer_class: The consumer class to instantiate (e.g., SimulationConsumer, LinksConsumer)
@@ -13,13 +21,8 @@ async def run_worker(consumer_class, logger_name, port, consumer_args=None):
     config = container.config()
     logger = LoggerManager.get_logger(logger_name)
     logger.info(f"Starting {logger_name} worker")
-    
-    if port is None:
-        raise ValueError("port is required")
-    
-    health_url = start_health_server(port=port, host="auto")
-    logger.info(f"[HEALTH] {logger_name} health check available at: {health_url}")
-    
+
+
     mongo_manager = container.mongo_manager()
     connection = None
     try:
@@ -38,5 +41,3 @@ async def run_worker(consumer_class, logger_name, port, consumer_args=None):
         if connection:
             await connection.close()
         await mongo_manager.close()
-
-    

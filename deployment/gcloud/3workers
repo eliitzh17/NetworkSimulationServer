@@ -1,0 +1,29 @@
+  gcloud run deploy handle-simulation-worker \
+  --image=us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest \
+  --platform=managed \
+  --region=us-central1 \
+  --port=4000 \
+  --command="python" \
+  --args="app/workers/handle_simulation_worker.py" \
+  --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
+  --allow-unauthenticated
+
+  gcloud run deploy handle-links-worker \
+  --image=us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest \
+  --platform=managed \
+  --region=us-central1 \
+  --port=5000 \
+  --command="python" \
+  --args="app/workers/handle_links_worker.py" \
+  --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
+  --allow-unauthenticated
+
+  gcloud run deploy handle-in-post-link-worker \
+  --image=us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest \
+  --platform=managed \
+  --region=us-central1 \
+  --port=6000 \
+  --command="python" \
+  --args="app/workers/handle_in_post_link_worker.py" \
+  --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
+  --allow-unauthenticated

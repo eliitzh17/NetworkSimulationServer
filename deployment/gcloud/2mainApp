@@ -1,0 +1,9 @@
+gcloud run deploy network-simulation-server \
+  --image=us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest \
+  --platform=managed \
+  --region=us-central1 \
+  --port=9090 \
+  --command="python" \
+  --args="main.py" \
+  --set-env-vars=MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
+  --allow-unauthenticated

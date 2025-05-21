@@ -6,5 +6,5 @@ if __name__ == "__main__":
     asyncio.run(run_worker(
         consumer_class=LinksConsumer,
         logger_name="handle_links_worker",
-        consumer_args={"port": 9092}
+        port=8003
     )) 

@@ -1,7 +1,6 @@
 from app.rabbit_mq.consumers.base_consumer import BaseConsumer
 from app.rabbit_mq.rabbit_mq_client import RabbitMQClient
 from aio_pika import ExchangeType
-import asyncio
 from app.core.simulation_bl import SimulationBusinessLogic
 from app.utils.logger import LoggerManager
 import os

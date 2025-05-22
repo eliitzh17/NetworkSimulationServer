@@ -8,19 +8,16 @@ from app.models.topolgy_models import Topology, Config
 from app.core.exceptions import MapperError
 class SimulationMapper:
     @staticmethod
-    def enrich_topologies(requests: List[SimulationRequest]) -> List[Topology]:
+    def enrich_topology(request: SimulationRequest) -> Topology:
         
         try:
-            topologies = []
-            for req in requests:
-                req.topology.config = req.config or Config(30, 0.0, "warning")
-                req.topology.id = str(ObjectId())
-                for link in req.topology.links:
-                    link.id = str(ObjectId())
-                topologies.append(req.topology)
-            return topologies
+            request.topology.config = request.topology.config if request.topology.config else request.config if request.config else Config(30, 0.0, "warning")
+            request.topology.id = str(ObjectId()) if request.topology.id is None else request.topology.id
+            for link in request.topology.links:
+                link.id = str(ObjectId()) if link.id is None else link.id
+            return request.topology
         except Exception as e:
-            raise MapperError(f"Failed to enrich topologies: {str(e)}") from e
+            raise MapperError(f"Failed to enrich topology: {str(e)}") from e
     
     @staticmethod
     def simulations_to_events(simulations: List[TopologySimulation]) -> List[SimulationEvent]:

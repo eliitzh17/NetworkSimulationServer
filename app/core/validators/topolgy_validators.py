@@ -1,11 +1,12 @@
 from app.models.topolgy_models import Topology
 from app.utils.logger import LoggerManager
+from app.db.toplogies_db import TopologiesDB
+from app.models.topolgy_models import Config
+from app.models.requests_models import SimulationRequest
+from app.utils.object_utils import get_fingerprint
 class TopologiesValidators:
     def __init__(self):
         self.logger = LoggerManager.get_logger('topologies_validators')
-
-    def validate_topology_is_new(self, topology: Topology):
-        return True
 
     def validate_links_is_not_empty(self, topology: Topology):
         topology_links = topology.links
@@ -57,13 +58,11 @@ class TopologiesValidators:
             return False
         return True
     
-    def validate_topologies(self, topology: Topology):
+    def validate_topologies(self, simulation_request: SimulationRequest):
         self.logger.info(f"Validating new topology...")
-        is_new = self.validate_topology_is_new(topology)
-        is_links_not_empty = self.validate_links_is_not_empty(topology)
-        is_nodes_not_empty = self.validate_nodes_is_not_empty(topology)
-        is_nodes_not_duplicate = self.validate_nodes_is_not_duplicate(topology)
-        result = is_new and is_links_not_empty and is_nodes_not_empty and is_nodes_not_duplicate
+        is_links_not_empty = self.validate_links_is_not_empty(simulation_request.topology)
+        is_nodes_not_empty = self.validate_nodes_is_not_empty(simulation_request.topology)
+        is_nodes_not_duplicate = self.validate_nodes_is_not_duplicate(simulation_request.topology)
+        result = is_links_not_empty and is_nodes_not_empty and is_nodes_not_duplicate
         self.logger.info(f"New topology validation {'passed' if result else 'failed'}")
         return result
-    

@@ -1,6 +1,7 @@
 from pydantic import BaseModel
-from app.models.topolgy_models import Topology, Config
-from typing import Optional
+from typing import List, Optional, TypeVar
+
+T = TypeVar('T')
 
 class PaginationRequest(BaseModel):
     page: int = 1
@@ -11,6 +12,9 @@ class CursorPaginationRequest(BaseModel):
     page_size: int = 10
     with_total: bool = False
 
-class SimulationRequest(BaseModel):
-    topology: Topology
-    config: Optional[Config] = None
+
+class CursorPaginationResponse(BaseModel):
+    items: List[T]
+    next_cursor: Optional[str]
+    page_size: int
+    total: Optional[int] = None

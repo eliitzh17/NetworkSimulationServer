@@ -1,48 +1,43 @@
-from app.db.simulation_db import SimulationDB
-from app.db.simulation_meta_data_db import SimulationMetaDataDB
+
 from app.utils.logger import LoggerManager
-from app.models.simulation_models import Link
 import asyncio
-from app.core.validator_bl import ValidatorBusinessLogic
 from datetime import datetime
-from app.models.simulation_models import SimulationMetaData, TopologyStatusEnum, Simulation
-from app.rabbit_mq.rabbit_mq_client import RabbitMQClient
-from config import get_config
-from app.rabbit_mq.publishers.post_run_publisher import PostLinkRunPublisher
+from app.models.topolgy_simulation_models import SimulationMetaData, TopologyStatusEnum, TopologySimulation
+from app.db.events_db import EventsDB
+from app.core.validators.links_validators import LinksValidators
+from app.models.statuses_enums import LinkStatusEnum
+from app.models.events_models import LinkEvent
+from app.db.topolgies_simulations_db import TopologiesSimulationsDB
+
 class LinkBusinessLogic:
     def __init__(self, db):
-        self.simulation_db = SimulationDB(db)
-        self.simulation_metadata_db = SimulationMetaDataDB(db)
-        self.logger = LoggerManager.get_logger('link_bl')
-        self.validator_bl = ValidatorBusinessLogic(self.logger)
+        self.logger = LoggerManager.get_logger('links_bl')
+        self.events_db = EventsDB(db)
+        self.topologies_simulations_db = TopologiesSimulationsDB(db)
+        self.validator_bl = LinksValidators(self.logger)
 
-    async def run_link(self, simulation_id, link: Link, is_last_try: bool):
-        self.logger.info(f"Running link for simulation {simulation_id}")
+    async def run_link(self, link_event: LinkEvent, is_last_try: bool):
+        self.logger.info(f"Running link {link_event.after.id} for simulation {link_event.sim_id}")
+        
         is_operation_failed = False
-        post_run_publisher = PostLinkRunPublisher(RabbitMQClient(get_config().RABBITMQ_URL))
         try:
-            #fetch data
-            simulation = await self.simulation_db.get_simulation(simulation_id)        
-            meta_data = await self.simulation_metadata_db.get_by_sim_id(simulation_id)
-            
-            if simulation is None:
-                raise ValueError(f"Simulation {simulation_id} not found")
-            
-            if meta_data is None:
-                raise ValueError(f"Meta data for simulation {simulation_id} not found")
-            
-            #validation
-            self.validator_bl.is_simulation_in_valid_state(simulation)
-            self.validator_bl.validate_link_nodes_exist(simulation, link)
-            self.validator_bl.time_validator_for_link(simulation, meta_data, link)
-            self.validator_bl.validate_packet_loss_percent(simulation, meta_data)
+            if self.validator_bl.run_pre_link_validator(link_event.after) is False:
+                self.logger.error(f"Link {link_event.after.id} failed pre-validation")
+                return
+                        
+            await asyncio.sleep(link_event.after.latency)
 
-            #wait for link latency
-            await asyncio.sleep(link.latency)
-            await post_run_publisher.publish_post_links_execution_messages(simulation_id, False)
+            if self.validator_bl.run_post_link_validator(link_event.after) is False:
+                self.logger.error(f"Link {link_event.after.id} failed post-validation")
+                return
 
+            #update link status
+            link_event.after.status = LinkStatusEnum.done
+            await self.events_db.update_event(link_event.id, link_event)
+            
+            simulation = await self.topologies_simulations_db.get_simulation(link_event.sim_id)
         except Exception as e:
-            self.logger.error(f"Error running link for simulation {simulation_id}: {e}")
+            self.logger.error(f"Error running link for simulation {link_event.sim_id}: {e}")
             is_operation_failed = True
             raise e
         finally:
@@ -68,7 +63,7 @@ class LinkBusinessLogic:
         await self.simulation_metadata_db.update(meta_data.id, meta_data)
         
         #use here in saga pattern, option 1 - lock, option 2 - saga pattern
-    async def handle_simulation_completion(self, simulation: Simulation, meta_data: SimulationMetaData):
+    async def handle_simulation_completion(self, simulation: TopologySimulation, meta_data: SimulationMetaData):
         if self.validator_bl.calculate_if_completed(simulation, meta_data):
             #packet_loss_percent - failed only if it's above this percent
             simulation.status = TopologyStatusEnum.done if meta_data.failed_links == 0 else TopologyStatusEnum.failed

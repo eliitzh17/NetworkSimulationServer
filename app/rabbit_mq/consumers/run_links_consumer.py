@@ -4,7 +4,7 @@ from aio_pika import ExchangeType
 from app.core.link_bl import LinkBusinessLogic
 from app.utils.logger import LoggerManager
 import os
-from app.models.simulation_models import Link
+from app.models.topolgy_simulation_models import Link
 import json
 
 class LinksConsumer(BaseConsumer):

@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.api.simulation_creator_api import simulation_creator_router
-from app.api.simulation_management_api import simulation_management_router
+# from app.api.simulation_management_api import simulation_management_router
 from app.utils.logger import LoggerManager
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.simulation_data_api import simulation_data_router
-from app.api.debug_api import debug_router
+# from app.api.simulation_data_api import simulation_data_router
+# from app.api.debug_api import debug_router
 from app import container
 
 main_logger = LoggerManager.get_logger('main')
@@ -50,9 +50,9 @@ app.add_middleware(
 # Include our endpoints
 base_path = "/api"
 app.include_router(simulation_creator_router, prefix=base_path)
-app.include_router(simulation_management_router, prefix=base_path)
-app.include_router(simulation_data_router, prefix=base_path)
-app.include_router(debug_router, prefix=base_path)
+# app.include_router(simulation_management_router, prefix=base_path)
+# app.include_router(simulation_data_router, prefix=base_path)
+# app.include_router(debug_router, prefix=base_path)
 
 # Health check endpoint
 @app.get("/health")

@@ -1,5 +1,5 @@
 from datetime import datetime
-from app.models.simulation_models import SimulationMetaData, Simulation
+from app.models.topolgy_simulation_models import SimulationMetaData, TopologySimulation
 from app.utils.system_info import get_system_info
 from app.utils.logger import LoggerManager
 

@@ -1,5 +1,5 @@
 from app.rabbit_mq.rabbit_mq_client import RabbitMQClient
-from app.models.simulation_models import LinkBusMessage
+from app.models.topolgy_simulation_models import LinkBusMessage
 from typing import List
 from app.rabbit_mq.publishers.base_publisher import BasePublisher
 import os

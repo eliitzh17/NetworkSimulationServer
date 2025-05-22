@@ -26,3 +26,7 @@ class ConfigError(NetworkSimulationError):
 class ResourceError(NetworkSimulationError):
     """Exception raised for resource allocation or availability errors."""
     pass 
+
+class MapperError(NetworkSimulationError):
+    """Exception raised for mapper errors."""
+    pass

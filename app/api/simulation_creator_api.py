@@ -3,7 +3,7 @@ from app.utils.logger import LoggerManager
 from app.models.requests_models import SimulationRequest
 from typing import List
 from app.api.dependencies import get_mongo_manager
-from app.core.topologies_bl import TopologiesBL
+from app.business_logic.topologies_bl import TopologiesBL
 from functools import partial
 
 logger = LoggerManager.get_logger("simulation_creator_api")

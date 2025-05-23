@@ -1,6 +1,6 @@
-from app import container
+from app.app_container import app_container
 from app.utils.logger import LoggerManager
-from contextlib import asynccontextmanager
+
 logger = LoggerManager.get_logger('mongo_dependency')
 
 async def _ensure_mongo_connected(mongo_manager):
@@ -35,7 +35,7 @@ async def get_mongo_manager(with_transaction: bool = False):
         db = Depends(partial(get_mongo_manager, with_transaction=False))
         db, session = Depends(partial(get_mongo_manager, with_transaction=True))
     """
-    mongo_manager = container.mongo_manager()
+    mongo_manager = app_container.mongo_manager()
     await _ensure_mongo_connected(mongo_manager)
     session = None
     try:
@@ -55,7 +55,7 @@ async def get_mongo_manager(with_transaction: bool = False):
 
 
 async def get_rabbitmq_client():
-    rabbitmq_client = container.rabbitmq_client()
+    rabbitmq_client = app_container.rabbitmq_client()
     try:
         yield rabbitmq_client
     finally:

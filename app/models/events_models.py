@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field
-from bson.objectid import ObjectId
 from datetime import datetime
 from app.models.statuses_enums import EventType
 from typing import TypeVar, Generic, Optional
@@ -17,6 +16,8 @@ class BaseEvent(BaseModel, Generic[T]):
     after: T
     is_handled: bool = False
     retry_count: int = 0
+    published: bool = False
+    published_at: Optional[datetime] = None
     created_at: datetime = Field(default_factory=datetime.now)
     updated_at: datetime = Field(default_factory=datetime.now)
     

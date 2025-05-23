@@ -5,7 +5,7 @@ from typing import List
 from app.models.events_models import LinkEvent
 from bson import ObjectId
 from app.models.topolgy_models import Topology, Config
-from app.core.exceptions import MapperError
+from app.business_logic.exceptions import MapperError
 class SimulationMapper:
     @staticmethod
     def enrich_topology(request: SimulationRequest) -> Topology:

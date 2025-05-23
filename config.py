@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import Type
 from dotenv import load_dotenv
 from app.utils.logger import LoggerManager
-from app.core.exceptions import ConfigError
+from app.business_logic.exceptions import ConfigError
 
 # Get logger for configuration
 logger = LoggerManager.get_logger("config")
@@ -27,6 +27,8 @@ class BaseConfig:
     RABBITMQ_RETRY_EXCHANGE_SUFFIX: str = "_dlx"
     RABBITMQ_RETRY_QUEUE_SUFFIX: str = "_retry"
     RABBITMQ_PREFETCH_COUNT: int = 5
+    PORT: int = 8000
+    LOG_LEVEL: str = "info"
     
 
     @staticmethod

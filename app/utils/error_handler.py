@@ -5,7 +5,7 @@ Provides helper functions for standardized error handling.
 import functools
 import traceback
 from app.utils.logger import LoggerManager
-from app.core.exceptions import NetworkSimulationError
+from app.business_logic.exceptions import NetworkSimulationError
 
 error_logger = LoggerManager.get_logger('error_handler')
 

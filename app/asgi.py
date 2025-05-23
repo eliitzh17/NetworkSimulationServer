@@ -6,15 +6,15 @@ from app.utils.logger import LoggerManager
 from fastapi.middleware.cors import CORSMiddleware
 # from app.api.simulation_data_api import simulation_data_router
 # from app.api.debug_api import debug_router
-from app import container
+from app.app_container import app_container
 
 main_logger = LoggerManager.get_logger('main')
-mongo_manager = container.mongo_manager()
+mongo_manager = app_container.mongo_manager()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
-        config = container.config()
+        config = app_container.config()
         main_logger.info("Starting application...")
         await mongo_manager.connect()
         await mongo_manager.ensure_indexes()

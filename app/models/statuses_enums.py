@@ -36,8 +36,6 @@ class EventType(str, Enum):
     """
     Represents the type of event in the simulation.
     """
-    SIMULATION_CREATED = "topology_created"
-    SIMULATION_UPDATED = "topology_updated"
-    LINK_RUN = "topology_link_run"
-    LINK_UPDATED = "topology_link_updated"
-    SIMULATION_ENDED = "topology_simulation_ended"
+    SIMULATION_CREATED = "simulation_created"
+    LINK_RUN = "link_run"
+    SIMULATIONS_COMPLETED = "simulations_completed"

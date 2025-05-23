@@ -1,6 +1,6 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from config import get_config
-from app.core.exceptions import DatabaseError
+from app.business_logic.exceptions import DatabaseError
 from app.utils.logger import LoggerManager
 
 COLLECTION_NAME = "simulations"
@@ -15,7 +15,7 @@ class MongoDBConnectionManager:
         config = get_config()
         self.uri = config.MONGODB_URI
         self.db_name = config.MONGODB_DB
-        self.client = None
+        self.client = None  
         self.db = None
 
     async def connect(self):

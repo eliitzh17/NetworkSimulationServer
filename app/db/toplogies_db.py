@@ -1,11 +1,10 @@
 from app.models.pageination_models import CursorPaginationResponse, CursorPaginationRequest
 from app.utils.logger import LoggerManager
-from app.core.error_handlers import DatabaseError, ValidationError
+from app.business_logic.error_handlers import DatabaseError, ValidationError
 from datetime import datetime, UTC
 from bson.objectid import ObjectId
 from app.models.topolgy_models import Topology
 from typing import List, Optional
-from pydantic import TypeAdapter
 import os
 from pymongo.errors import PyMongoError
 from pymongo import UpdateOne

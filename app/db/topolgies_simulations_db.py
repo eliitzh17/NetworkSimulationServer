@@ -1,5 +1,5 @@
 from app.utils.logger import LoggerManager
-from app.core.exceptions import DatabaseError, ValidationError
+from app.business_logic.exceptions import DatabaseError, ValidationError
 from datetime import datetime, UTC
 import os
 from pymongo.errors import PyMongoError
@@ -63,7 +63,10 @@ class TopologiesSimulationsDB:
             ValidationError: If the data is invalid
         """
         try:
-            simulation = await self.collection.find_one({"_id": ObjectId(simulation_id)})
+            simulation = await self.collection.find_one({"_id": simulation_id})
+            if simulation is None:
+                self.db_logger.error(f"Simulation {simulation_id} not found")
+                return None
             return TopologySimulation(**simulation)
         except PyMongoError as e:
             self.db_logger.error(f"Database error while fetching topologies simulations: {str(e)}")
@@ -76,7 +79,7 @@ class TopologiesSimulationsDB:
         try:
             if cursor_pagination_request.cursor:
                 try:
-                    query['_id'] = {'$gt': ObjectId(cursor_pagination_request.cursor)}
+                    query['_id'] = {'$gt': cursor_pagination_request.cursor}
                 except Exception:
                     raise ValidationError('Invalid cursor value')
             cursor = self.collection.find(query).sort('_id', 1).limit(cursor_pagination_request.page_size)
@@ -119,7 +122,7 @@ class TopologiesSimulationsDB:
             update_dict = update_data.model_dump(by_alias=True)
             update_dict["updated_at"] = datetime.now(UTC)
             operations.append(
-                UpdateOne({"_id": ObjectId(simulation_id)}, {"$set": update_dict})
+                UpdateOne({"_id": simulation_id}, {"$set": update_dict})
             )
         try:
             if operations:

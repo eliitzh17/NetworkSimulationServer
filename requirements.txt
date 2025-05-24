@@ -7,8 +7,5 @@ uvicorn
 motor
 loguru
 pydantic
-# Optional, for visualization scripts:
-# matplotlib
-# networkxsf
 pandas
-pymongo
+pymongo==4.6.3

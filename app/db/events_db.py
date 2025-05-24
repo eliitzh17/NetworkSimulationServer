@@ -88,10 +88,10 @@ class EventsDB:
             raise ValidationError(f"Error processing Events data: {str(e)}") from e
         
     
-    async def update_events_published(self, event_ids: list[str]) -> tuple[int, list[dict]]:
+    async def update_events_published(self, event_ids: list[str]) -> int:
         """
         Set published=True for all events with IDs in event_ids.
-        Returns a tuple: (number of updated documents, list of up-to-date documents).
+        Returns the number of updated documents.
         """
         self.logger.info(f"update_events_published event_ids: {event_ids}")
         try:
@@ -102,9 +102,7 @@ class EventsDB:
             )
             self.logger.info(f"Marked {result.modified_count} events as published.")
             if result.modified_count > 0:
-                # Fetch the up-to-date documents in a single query
-                updated_docs = await self.collection.find({"_id": {"$in": event_ids}}).to_list(length=len(event_ids))
-                return result.modified_count, updated_docs
+                return result.modified_count
             else:
                 raise ValidationError(f"No events marked as published")
         except PyMongoError as e:

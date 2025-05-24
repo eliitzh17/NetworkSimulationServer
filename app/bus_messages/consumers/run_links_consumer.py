@@ -4,12 +4,14 @@ from app.models.events_models import LinkEvent
 import aio_pika
 import json
 class LinksConsumer(BaseConsumer):
-    def __init__(self, db, queue, logger_name, retry_queue=None, dead_letter_queue=None, max_retries=3, retry_delay=1, monitor=None):
-        super().__init__(db, queue, logger_name, retry_queue=retry_queue, dead_letter_queue=dead_letter_queue, max_retries=max_retries, retry_delay=retry_delay, monitor=monitor)
+    def __init__(self, db, queue, logger_name, retry_queue=None, dead_letter_queue=None, max_retries=3, retry_delay=1):
+        super().__init__(db, queue, logger_name, retry_queue=retry_queue, dead_letter_queue=dead_letter_queue, max_retries=max_retries, retry_delay=retry_delay)
         self.link_bl = LinkBusinessLogic(db)
         self.name = "links_consumer"
 
     async def process_message(self, message: aio_pika.IncomingMessage):
+        is_last_retry = self._get_retry_count(message) == self.max_retries
+
         data = json.loads(message.body.decode())
         link_event = LinkEvent(**data)
-        await self.link_bl.run_link(link_event)
+        await self.link_bl.run_link(link_event, is_last_retry)

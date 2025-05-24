@@ -17,7 +17,6 @@ class Link(BaseModel):
     from_node: str 
     to_node: str
     latency: int
-    status: Optional[LinkStatusEnum] = LinkStatusEnum.pending
 
 class Config(BaseModel):
     """

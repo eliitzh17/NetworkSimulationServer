@@ -20,12 +20,12 @@ class SimulationMapper:
             raise MapperError(f"Failed to enrich topology: {str(e)}") from e
     
     @staticmethod
-    def simulations_to_events(simulations: List[TopologySimulation]) -> List[SimulationEvent]:
+    def simulations_to_events(simulations: List[TopologySimulation], event_type: EventType) -> List[SimulationEvent]:
         try:
             events = []
             for simulation in simulations:
                 event = SimulationEvent(
-                    event_type=EventType.SIMULATION_CREATED,
+                    event_type=event_type,
                     before=None,
                     after=simulation
                 )

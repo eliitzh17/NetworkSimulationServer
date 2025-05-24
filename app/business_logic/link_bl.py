@@ -1,4 +1,3 @@
-
 from app.utils.logger import LoggerManager
 import asyncio
 from datetime import datetime
@@ -8,6 +7,7 @@ from app.business_logic.validators.links_validators import LinksValidators
 from app.models.statuses_enums import LinkStatusEnum
 from app.models.events_models import LinkEvent
 from app.db.topolgies_simulations_db import TopologiesSimulationsDB
+from app.models.topolgy_simulation_models import LinkExecutionState
 
 class LinkBusinessLogic:
     def __init__(self, db):
@@ -16,59 +16,55 @@ class LinkBusinessLogic:
         self.topologies_simulations_db = TopologiesSimulationsDB(db)
         self.validator_bl = LinksValidators()
 
-    async def run_link(self, link_event: LinkEvent):
-        self.logger.info(f"Running link {link_event.after.id} for simulation {link_event.sim_id}")
-        
+    async def run_link(self, link_event: LinkEvent, is_last_retry: bool):
+        if is_last_retry:
+            self.logger.info(f"Running link {link_event.after.id} for simulation {link_event.sim_id} (last retry)")
         try:
             simulation = await self.topologies_simulations_db.get_topology_simulation(link_event.sim_id)
             if simulation is None:
                 self.logger.error(f"Simulation {link_event.sim_id} not found")
                 return
-            
+
             if self.validator_bl.run_pre_link_validator(simulation, link_event.after) is False:
                 self.logger.error(f"Link {link_event.after.id} failed pre-validation")
                 return
+            
+            link_exec_state = self.validator_bl.get_not_processed_link(simulation, link_event.after)
+            link_exec_state.start_time = datetime.now()
                         
             await asyncio.sleep(link_event.after.latency)
 
-            if self.validator_bl.run_post_link_validator(simulation) is False:
+            simulation = await self.topologies_simulations_db.get_topology_simulation(link_event.sim_id)
+            if self.validator_bl.run_post_simulation_Validator(simulation) is False:
                 self.logger.error(f"Link {link_event.after.id} failed post-validation")
                 return
 
-            #update link status
-            link_event.after.status = LinkStatusEnum.done
-            link_event.is_handled = True
-            await self.events_db.update_event(link_event.event_id, link_event)
-            
-
-            # await self.post_link_execution_actions(simulation)
+            link_exec_state.status = LinkStatusEnum.done
         except Exception as e:
             self.logger.error(f"Error running link for simulation {link_event.sim_id}: {e}")
+            link_exec_state = self.validator_bl.get_not_processed_link(simulation, link_event.after)
+            link_exec_state.retry_count += 1
+            if is_last_retry:
+                link_exec_state.status = LinkStatusEnum.failed
             raise e
+        finally:
+            simulation, link_event = self.end_link_enrichment(simulation, link_event, link_exec_state)
+            await self.events_db.update_events_handled([link_event.event_id])
+            await self.topologies_simulations_db.update_simulation(simulation.sim_id, simulation)
 
+    def end_link_enrichment(self, simulation: TopologySimulation, link_event: LinkEvent, link_exec_state: LinkExecutionState):
         
-    async def post_link_execution_actions(self, simulation: TopologySimulation, link_event: LinkEvent):
+        link_event.is_handled = True
+        link_exec_state.end_time = datetime.now()
         
-        #update meta data
-        simulation.links_execution_state.processed_links += 1
-        if link_event.after.status == LinkStatusEnum.failed:
+        if link_exec_state.status == LinkStatusEnum.failed:
             self.logger.error(f"Link of simulation {simulation.sim_id} failed")
-            simulation.links_execution_state.failed_links += 1
+            simulation.links_execution_state.add_link_state_to_failed(link_exec_state)
         else:
             self.logger.info(f"Link of simulation {simulation.sim_id} succeeded")
-            simulation.links_execution_state.success_links += 1
-        simulation.links_execution_state.current_time = datetime.now()
-        # meta_data.total_execution_time = meta_data.current_time - meta_data.start_time #TODO: calculate 
+            simulation.links_execution_state.add_link_state_to_success(link_exec_state)
+            
+        return simulation, link_event
         
-        await self.handle_simulation_completion(simulation)
-        await self.topologies_simulations_db.update_simulations([(simulation.sim_id, simulation)])
-        
-        #use here in saga pattern, option 1 - lock, option 2 - saga pattern
-    async def handle_simulation_completion(self, simulation: TopologySimulation):
-        if self.validator_bl.calculate_if_completed(simulation, simulation.links_execution_state):
-            #packet_loss_percent - failed only if it's above this percent
-            simulation.status = TopologyStatusEnum.done if simulation.links_execution_state.failed_links == 0 else TopologyStatusEnum.failed
-            simulation.end_time = simulation.links_execution_state.current_time
-            self.logger.info(f"Simulation {simulation.sim_id} completed\nMeta data: {simulation.links_execution_state.model_dump()}")
-            await self.topologies_simulations_db.update_simulations([(simulation.sim_id, simulation)])
+
     

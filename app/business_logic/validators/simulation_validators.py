@@ -27,14 +27,25 @@ class SimulationValidators:
             return TopologyStatusEnum.running
         
     def calculate_if_completed(self, simulation: TopologySimulation):
-        if simulation.links_execution_state.processed_links == len(simulation.topology.links):
-            return True
-        return False
+        total_links = len(simulation.topology.links)
+        processed_links = len(simulation.links_execution_state.processed_links)
+        not_processed_links = len(simulation.links_execution_state.not_processed_links)
+        
+        is_completed = processed_links == total_links and not_processed_links == 0
+        
+        if not is_completed:
+            self.logger.info(f"Simulation {simulation.sim_id} is not completed: processed={processed_links}/{total_links}, not_processed={not_processed_links}")
+        
+        return is_completed
+    
+    def already_running(self, simulation: TopologySimulation):
+        return simulation.status == TopologyStatusEnum.running
 
     def run_pre_simulation_validators(self, simulation: TopologySimulation):
         time_valid = self.time_validator_for_simulation(simulation)
         all_link_nodes_exist = self.validate_all_link_nodes_exists(simulation)
-        return time_valid and all_link_nodes_exist
+        already_running = self.already_running(simulation)
+        return time_valid and all_link_nodes_exist and not already_running
     
         
     def run_post_simulation_validators(self, simulation: TopologySimulation):

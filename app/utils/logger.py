@@ -3,7 +3,7 @@ from loguru import logger
 from typing import Dict, Any
 import threading
 
-class AbstractLogger(ABC):
+class BasicLogger(ABC):
     """
     Abstract base class for loggers, enforcing best practices.
     """
@@ -27,7 +27,7 @@ class AbstractLogger(ABC):
     def critical(self, message: str, **kwargs: Any) -> None:
         pass
 
-class LoguruLogger(AbstractLogger):
+class LoguruLogger(BasicLogger):
     """
     Concrete logger implementation using Loguru.
     """
@@ -78,15 +78,15 @@ class LoggerManager:
     Holds and manages logger instances.
     Thread-safe implementation.
     """
-    _loggers: Dict[str, AbstractLogger] = {}
+    _loggers: Dict[str, BasicLogger] = {}
     _lock = threading.Lock()
     
     @classmethod
-    def get_logger_name(cls, name: str = 'default', level: str = 'DEBUG') -> AbstractLogger:
+    def get_logger_name(cls, name: str = 'default', level: str = 'DEBUG') -> BasicLogger:
         return f"{name}_{level}"
     
     @classmethod
-    def get_logger(cls, name: str = 'default', level: str = 'DEBUG') -> AbstractLogger:
+    def get_logger(cls, name: str = 'default', level: str = 'DEBUG') -> BasicLogger:
         with cls._lock:
             if name not in cls._loggers:
                 cls._loggers[name] = LoguruLogger(name, level)

@@ -117,6 +117,21 @@ class LinksValidators:
         self.logger.info(f"Link {link.id} latency is within time left for simulation {simulation.sim_id}")
         return True
     
+    def get_not_processed_link(self, simulation: TopologySimulation, current_link: Link):
+        not_processed_link = next((link for link in simulation.links_execution_state.not_processed_links 
+            if link.link_id == current_link.id),
+            None
+        )
+        return not_processed_link
+    
+    def get_link(self, simulation: TopologySimulation, current_link: Link):
+        processed_link = next((link for link in simulation.topology.links 
+            if link.link_id == current_link.id),
+            None
+        )
+        return processed_link
+    
+    
     def run_pre_link_validator(self, simulation: TopologySimulation, link: Link):
         """
         Run all pre-link validation checks (node existence, simulation state, link timing).
@@ -130,7 +145,8 @@ class LinksValidators:
         node_exists = self.validate_link_nodes_exist_in_topology(simulation, link)
         simulation_state = self.is_simulation_in_valid_state(simulation)
         link_time_valid = self.is_link_latecny_valid_in_simulation(simulation, link)
-        result = node_exists and simulation_state and link_time_valid
+        link_in_not_processed_links = self.get_not_processed_link(simulation, link) is not None
+        result = node_exists and simulation_state and link_time_valid and link_in_not_processed_links
         self.logger.info(f"Pre-link validation {'passed' if result else 'failed'} for link {link.id} in simulation {simulation.sim_id}")
         return result
 
@@ -143,19 +159,20 @@ class LinksValidators:
         Returns:
             bool: True if packet loss percent is within the threshold, False otherwise (logs a warning).
         """
-        failed_links = len(simulation.links_execution_state.failed_links)
-        processed_links = len(simulation.links_execution_state.processed_links)
-        if failed_links == 0 or processed_links == 0:
+        failed_links_count = len(simulation.links_execution_state.failed_links)
+        processed_links_count = len(simulation.links_execution_state.processed_links)
+        
+        if failed_links_count == 0 or processed_links_count == 0:
             return True
         
-        current_packet_loss_percent = failed_links / processed_links
+        current_packet_loss_percent = failed_links_count / processed_links_count
         if current_packet_loss_percent > simulation.topology.config.packet_loss_percent:
             self.logger.warning(f"Current packet loss percent is greater than threshold percent: {current_packet_loss_percent} > {simulation.topology.config.packet_loss_percent}")
             return False
         self.logger.info(f"Packet loss percent validated for simulation {simulation.sim_id}: {current_packet_loss_percent}")
         return True
 
-    def run_post_link_validator(self, simulation: TopologySimulation):
+    def run_post_simulation_Validator(self, simulation: TopologySimulation):
         """
         Run post-link validation checks (e.g., packet loss percent).
 

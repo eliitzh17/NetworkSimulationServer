@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional, TypeVar
+from typing import List, Optional, TypeVar, Generic
 
 T = TypeVar('T')
 
@@ -13,7 +13,7 @@ class CursorPaginationRequest(BaseModel):
     with_total: bool = False
 
 
-class CursorPaginationResponse(BaseModel):
+class CursorPaginationResponse(BaseModel, Generic[T]):
     items: List[T]
     next_cursor: Optional[str]
     page_size: int

@@ -6,7 +6,6 @@ import asyncio
 from datetime import datetime, UTC
 from typing import Optional, Any, Dict
 from app.utils.logger import LoggerManager
-from app.monitoring.message_bus_monitor import MessageBusMonitor
 import time
 
 class BaseConsumer:
@@ -19,7 +18,6 @@ class BaseConsumer:
         dead_letter_queue: Optional[aio_pika.Queue] = None,
         max_retries: int = 3,
         retry_delay: int = 1,
-        monitor: Optional[MessageBusMonitor] = None
     ):
         self.db = db
         self.queue = queue
@@ -28,7 +26,6 @@ class BaseConsumer:
         self.logger = LoggerManager.get_logger(logger_name)
         self.max_retries = max_retries
         self.retry_delay = retry_delay
-        self.monitor = monitor
 
     async def start_consuming(self):
         self.logger.info(f" [*] Waiting for messages on {self.queue.name}. To exit press CTRL+C")
@@ -43,18 +40,11 @@ class BaseConsumer:
                 if self._exceeded_max_retries(retry_count):
                     self.logger.error(f"Message exceeded maximum retry attempts ({self.max_retries})")
                     await self._move_to_dead_letter_queue(message)
-                    if self.monitor:
-                        self.monitor.record_message_dlq()
                     return
                 try:
                     await self.process_message(message)
-                    processing_time = time.time() - start_time
-                    if self.monitor:
-                        self.monitor.record_message_processed(processing_time)
                     self.logger.info(f"✅ Message processed successfully by {self.__class__.__name__}")
                 except Exception as e:
-                    if self.monitor:
-                        self.monitor.record_message_failed()
                     await self._handle_processing_error(e, message, retry_count)
         except ChannelInvalidStateError as e:
             self.logger.error(f"{self.__class__.__name__}[!] ChannelInvalidStateError: {e}\n{traceback.format_exc()}")
@@ -95,11 +85,7 @@ class BaseConsumer:
         if self._exceeded_max_retries(retry_count + 1):
             self.logger.error(f"Exceeded max retries, moving message to dead letter queue.")
             await self._move_to_dead_letter_queue(message)
-            if self.monitor:
-                self.monitor.record_message_dlq()
             return
-        if self.monitor:
-            self.monitor.record_message_retried()
         await self.retry_queue.channel.default_exchange.publish(
             aio_pika.Message(
                 body=message.body,

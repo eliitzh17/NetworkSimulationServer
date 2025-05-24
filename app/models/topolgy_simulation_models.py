@@ -4,23 +4,46 @@ from app.models.topolgy_models import Topology
 from app.models.statuses_enums import TopologyStatusEnum
 from typing import List
 from datetime import datetime
+from app.models.statuses_enums import LinkStatusEnum
+
+class LinkExecutionState(BaseModel):    
+    link_id: str = Field(None, alias="_id")
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    retry_count: int = 0
+    status: Optional[LinkStatusEnum] = LinkStatusEnum.pending
 
 class TopolgyLinksExecutionState(BaseModel):
-    not_processed_links: List[str] = []
-    processed_links: List[str] = []
-    failed_links: List[str] = []
-    success_links: List[str] = []
+    not_processed_links: List[LinkExecutionState] = []
+    processed_links: List[LinkExecutionState] = []
+    failed_links: List[LinkExecutionState] = []
+    success_links: List[LinkExecutionState] = []
     
-    def move_link_to_success(self, link_id: str):
-        self.not_processed_links.remove(link_id)
-        self.processed_links.append(link_id)
-        self.success_links.append(link_id)
+    def add_link_state_to_success(self, link_state: LinkExecutionState):
+        link = next((l for l in self.not_processed_links if l.link_id == link_state.link_id), None)
+        if link:
+            self.not_processed_links.remove(link)
+            self.processed_links.append(link_state)
+            self.success_links.append(link_state)
     
-    def move_link_to_failed(self, link_id: str):
-        self.not_processed_links.remove(link_id)
-        self.processed_links.append(link_id)
-        self.failed_links.append(link_id)
-        
+    def add_link_state_to_failed(self, link_state: LinkExecutionState):
+        link = next((l for l in self.not_processed_links if l.link_id == link_state.link_id), None)
+        if link:
+            self.not_processed_links.remove(link)
+            self.processed_links.append(link_state)
+            self.failed_links.append(link_state)
+    
+class PauseTime(BaseModel):
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    duration: Optional[int] = None
+    
+class SimulationTime(BaseModel):
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    total_execution_time: Optional[int] = None
+    pauses: List[PauseTime] = []
+    
     
 class TopologySimulation(BaseModel):
     """
@@ -38,6 +61,7 @@ class TopologySimulation(BaseModel):
     topology: Topology
     row_version: int = 1
     links_execution_state: TopolgyLinksExecutionState = TopolgyLinksExecutionState()
+    simulation_time: SimulationTime = SimulationTime()
     status: Optional[TopologyStatusEnum] = TopologyStatusEnum.pending    
     updated_at: datetime = None
     created_at: datetime = None

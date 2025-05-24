@@ -2,12 +2,13 @@ from app.db.toplogies_db import TopologiesDB
 from typing import List
 from app.business_logic.validators.topolgy_validators import TopologiesValidators
 from app.utils.logger import LoggerManager
-from app.models.topolgy_simulation_models import TopologySimulation
+from app.models.topolgy_simulation_models import TopologySimulation, LinkExecutionState, LinkExecutionState
 from app.business_logic.topolgies_simulation_bl import TopologiesSimulationsBusinessLogic
 from app.models.requests_models import SimulationRequest
 from app.models.mapper import SimulationMapper
 from bson import ObjectId
 import asyncio
+from app.models.topolgy_simulation_models import TopolgyLinksExecutionState
 class TopologiesBL:
     def __init__(self, db):
         self.logger = LoggerManager.get_logger('topologies_bl')
@@ -64,6 +65,10 @@ class TopologiesBL:
         simulations = []
         for topology in topologies:
             simulation = TopologySimulation(topology=topology)
+            for link in simulation.topology.links:
+                link_execution_state = LinkExecutionState()
+                link_execution_state.link_id = link.id
+                simulation.links_execution_state.not_processed_links.append(link_execution_state)
             simulation.sim_id = str(ObjectId())
             simulations.append(simulation)
         return await self.topologies_simulations_bl.create_topologies_simulations(simulations, session=session)

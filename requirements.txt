@@ -11,3 +11,4 @@ pydantic
 # matplotlib
 # networkxsf
 pandas
+pymongo

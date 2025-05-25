@@ -4,7 +4,7 @@ REPOSITORY=nss
 IMAGE=network-simulation-server
 
 # Build
-docker build -t $REGION-docker.pkg.dev/$GOOGLE_CLOUD_PROJECT/$REPOSITORY/$IMAGE:latest -f deployment/Dockerfile .
+docker build -t $REGION-docker.pkg.dev/$GOOGLE_CLOUD_PROJECT/$REPOSITORY/$IMAGE:latest -f Dockerfile .
 
 # Authenticate Docker
 gcloud auth configure-docker $REGION-docker.pkg.dev

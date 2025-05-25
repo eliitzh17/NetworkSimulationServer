@@ -27,3 +27,75 @@
   --args="app/workers/handle_in_post_link_worker.py" \
   --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
   --allow-unauthenticated
+
+  gcloud run deploy consumer-simulation-worker \
+  --image=us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest \
+  --platform=managed \
+  --region=us-central1 \
+  --command="python" \
+  --args="app/workers/consumer_workers/consumer_simulation_worker.py" \
+  --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
+  --allow-unauthenticated
+
+  gcloud run deploy consumer-links-worker \
+  --image=us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest \
+  --platform=managed \
+  --region=us-central1 \
+  --command="python" \
+  --args="app/workers/consumer_workers/consumer_links_worker.py" \
+  --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
+  --allow-unauthenticated
+
+  gcloud run deploy publish-completed-worker \
+  --image=us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest \
+  --platform=managed \
+  --region=us-central1 \
+  --allow-unauthenticated \
+  --memory 512Mi \
+  --cpu 1 \
+  --min-instances 1 \
+  --max-instances 5 \
+  --command="python" \
+  --args="app/workers/outbox_publishers_workers/publish_completed_worker.py" \
+  --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
+  --allow-unauthenticated
+
+  gcloud run deploy publish-simulations-worker \
+  --image=us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest \
+  --region=us-central1 \
+  --allow-unauthenticated \
+  --memory 512Mi \
+  --cpu 1 \
+  --min-instances 1 \
+  --max-instances 5 \
+  --command="python" \
+  --args="app/workers/outbox_publishers_workers/publish_simulations_worker.py" \
+  --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
+
+  gcloud run deploy publish-links-worker \
+  --image=us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest \
+  --region=us-central1 \
+  --allow-unauthenticated \
+  --memory 512Mi \
+  --cpu 1 \
+  --min-instances 1 \
+  --max-instances 5 \
+  --command="python" \
+  --args="app/workers/outbox_publishers_workers/publish_links_worker.py" \
+  --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
+  --allow-unauthenticated
+
+
+  gcloud run deploy simulations-worker \
+  --image=us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest \
+  --platform managed \
+  --region=us-central1 \
+  --port=8080 \
+  --allow-unauthenticated \
+  --memory 512Mi \
+  --cpu 1 \
+  --min-instances 1 \
+  --max-instances 1 \
+  --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
+  --command="python" \
+  --args="app/workers/outbox_publishers_workers/publish_simulations_worker.py"

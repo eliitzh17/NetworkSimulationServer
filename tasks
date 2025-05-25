@@ -1,0 +1,14 @@
+CQRS remove all the mongodb connection for tasks, to write to db it should be only with message bus service
+db connection should only to read from data base
+implement pool connections for read 
+
+scan the project and highlight the area that don't use python best practices
+remove all unused references 
+
+change all the ids to objectid of mongodb
+
+resume simulation -> tigger links events based on their status on the simulations
+
+is all node exist in links?
+
+add validation for nodes without links

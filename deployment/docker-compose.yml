@@ -45,10 +45,10 @@ services:
     restart: unless-stopped
     command: [ "python", "app/workers/handle_links_worker.py" ]
 
-  handle_in_post_link_worker:
+  consumer_simulations_worker:
     build:
       context: ..
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.consumer_simulations_worker
     env_file:
       - ../.env
     environment:

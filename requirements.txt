@@ -9,3 +9,4 @@ loguru
 pydantic
 pandas
 pymongo==4.6.3
+functions-framework

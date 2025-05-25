@@ -9,7 +9,7 @@ from bson.objectid import ObjectId
 from datetime import datetime
 import pymongo
 from pymongo import MongoClient
-
+from app.app_container import app_container
 class EventsDB:
     """
     Repository for CRUD operations on Events documents in MongoDB.
@@ -18,7 +18,7 @@ class EventsDB:
 
     def __init__(self, db):
         self.db = db
-        self.collection = self.db[os.getenv("EVENTS_COLLECTION")]
+        self.collection = self.db[app_container.config().EVENTS_COLLECTION]
         self.logger = LoggerManager.get_logger('events_db')
 
     async def store_events(self, events: List[BaseEvent], session=None) -> str:

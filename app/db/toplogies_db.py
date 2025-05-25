@@ -11,6 +11,7 @@ from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 from app.utils.object_utils import get_fingerprint
 from app.models.requests_models import SimulationRequest
+from app.app_container import app_container
 class TopologiesDB:
     """
     Repository for CRUD operations on Topologies documents in MongoDB.
@@ -19,7 +20,7 @@ class TopologiesDB:
     db_logger = LoggerManager.get_logger('topologies_db')
 
     def __init__(self, db):
-        self.collection = db[os.getenv("TOPOLOGIES_COLLECTION")]
+        self.collection = db[app_container.config().TOPOLOGIES_COLLECTION]
 
     def _convert_doc_to_topology(self, doc):
         return Topology.model_validate({k: v for k, v in doc.items() if k != 'fingerprint'})

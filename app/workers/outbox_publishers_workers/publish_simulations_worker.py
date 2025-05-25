@@ -22,7 +22,7 @@ def main():
 
         # setup rabbitmq
         exchange_configs = [
-            {"name": os.getenv("SIMULATION_EXCHANGE"), "type": ExchangeType.DIRECT, "durable": True},
+            {"name": app_container.config().SIMULATION_EXCHANGE, "type": ExchangeType.DIRECT, "durable": True},
         ]
         rabbitmq_manager = RabbitMQManager(rabbitmq_client, exchange_configs)
         await rabbitmq_manager.setup_exchanges()
@@ -32,7 +32,7 @@ def main():
             SimulationsPublisher,
             "simulations_publisher",
             publisher_args={"rabbitmq_manager": rabbitmq_manager, 
-                            "exchange_name": os.getenv("SIMULATION_EXCHANGE"), 
+                            "exchange_name": app_container.config().SIMULATION_EXCHANGE, 
                             "db": mongo_manager.db}
         )
     asyncio.run(setup_and_run())

@@ -55,22 +55,20 @@ class MultiQueueConsumerWorker(BaseConsumerWorker):
         mongo_manager = app_container.mongo_manager()
         await mongo_manager.connect()
         db = getattr(mongo_manager, 'db', None)
-        from config import get_config
-        config = get_config()
 
         # RabbitMQ URL
         if self.USE_CONFIG_FOR_RABBITMQ_URL:
-            rabbitmq_url = config.RABBITMQ_URL
+            rabbitmq_url = app_container.config().RABBITMQ_URL
         else:
-            rabbitmq_url = os.getenv("RABBITMQ_URL")
+            rabbitmq_url = app_container.config().RABBITMQ_URL
         from app.bus_messages.rabbit_mq_client import RabbitMQClient
         rabbitmq_client = RabbitMQClient(rabbitmq_url)
 
         # Exchange name
         if self.USE_CONFIG_FOR_EXCHANGE:
-            exchange_name = getattr(config, self.EXCHANGE_ENV)
+            exchange_name = getattr(app_container.config, self.EXCHANGE_ENV)
         else:
-            exchange_name = os.getenv(self.EXCHANGE_ENV)
+            exchange_name = app_container.config().EXCHANGE_ENV
         from app.bus_messages.rabbit_mq_manager import RabbitMQManager
         exchange_configs = [
             {"name": exchange_name, "type": self.EXCHANGE_TYPE, "durable": True},
@@ -81,7 +79,7 @@ class MultiQueueConsumerWorker(BaseConsumerWorker):
         # Setup all consumers
         tasks = []
         for consumer_cfg in self.CONSUMER_CONFIGS:
-            queue_name = os.getenv(consumer_cfg['queue_env'])
+            queue_name = app_container.config().QUEUE_ENV
             if queue_name is None:
                 logger.error(f"Queue {consumer_cfg['queue_env']} not found")
                 continue

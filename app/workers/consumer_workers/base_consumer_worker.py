@@ -28,20 +28,19 @@ class BaseConsumerWorker:
         mongo_manager = app_container.mongo_manager()
         await mongo_manager.connect()
         db = getattr(mongo_manager, 'db', None)
-        config = get_config()
 
         # RabbitMQ URL
         if self.USE_CONFIG_FOR_RABBITMQ_URL:
-            rabbitmq_url = config.RABBITMQ_URL
+            rabbitmq_url = app_container.config().RABBITMQ_URL
         else:
-            rabbitmq_url = os.getenv("RABBITMQ_URL")
+            rabbitmq_url = app_container.config().RABBITMQ_URL
         rabbitmq_client = RabbitMQClient(rabbitmq_url)
 
         # Exchange name
         if self.USE_CONFIG_FOR_EXCHANGE:
-            exchange_name = getattr(config, self.EXCHANGE_ENV)
+            exchange_name = getattr(app_container.config, self.EXCHANGE_ENV)
         else:
-            exchange_name = os.getenv(self.EXCHANGE_ENV)
+            exchange_name = app_container.config().EXCHANGE_ENV
         exchange_configs = [
             {"name": exchange_name, "type": self.EXCHANGE_TYPE, "durable": True},
         ]
@@ -50,9 +49,9 @@ class BaseConsumerWorker:
 
         # Queue name
         if self.USE_CONFIG_FOR_QUEUE:
-            queue_name = getattr(config, self.QUEUE_ENV)
+            queue_name = getattr(app_container.config, self.QUEUE_ENV)
         else:
-            queue_name = os.getenv(self.QUEUE_ENV)
+            queue_name = app_container.config().QUEUE_ENV
 
         main_queue, retry_queue, dead_letter_queue = await rabbitmq_manager.setup_queue_with_retry(
             queue_name=queue_name,
@@ -73,10 +72,10 @@ class BaseConsumerWorker:
             dead_letter_queue=dead_letter_queue,
         )
         # Add config-based kwargs if present
-        if hasattr(config, 'RABBITMQ_MAX_RETRIES'):
-            consumer_kwargs['max_retries'] = getattr(config, 'RABBITMQ_MAX_RETRIES', None)
-        if hasattr(config, 'RABBITMQ_INITIAL_RETRY_DELAY'):
-            consumer_kwargs['retry_delay'] = getattr(config, 'RABBITMQ_INITIAL_RETRY_DELAY', None)
+        if hasattr(app_container.config, 'RABBITMQ_MAX_RETRIES'):
+            consumer_kwargs['max_retries'] = getattr(app_container.config, 'RABBITMQ_MAX_RETRIES', None)
+        if hasattr(app_container.config, 'RABBITMQ_INITIAL_RETRY_DELAY'):
+            consumer_kwargs['retry_delay'] = getattr(app_container.config, 'RABBITMQ_INITIAL_RETRY_DELAY', None)
         if self.EXTRA_CONSUMER_KWARGS:
             consumer_kwargs.update(self.EXTRA_CONSUMER_KWARGS)
 

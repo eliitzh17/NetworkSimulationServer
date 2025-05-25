@@ -85,7 +85,7 @@ class BasePublisher(ABC):
         Publishes a batch of new events of the given type that are published but not yet handled.
         Marks them as handled in the DB if successful.
         """
-        max_parallel = int(os.getenv("MAX_SIMULATIONS_IN_PARALLEL", 5))
+        max_parallel = int(app_container.config().MAX_SIMULATIONS_IN_PARALLEL)
         filter = {
             "is_handled": False,
             "published": False,

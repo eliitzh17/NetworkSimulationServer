@@ -4,7 +4,7 @@ import platform
 import os
 from typing import Dict, Tuple
 from app.utils.logger import LoggerManager
-
+from app.app_container import app_container
 # Initialize logger
 logger = LoggerManager.get_logger('system_info')
 
@@ -39,10 +39,10 @@ def get_system_info() -> Dict[str, str]:
         try:
             # Check environment variables for port
             port_value = os.getenv("SERVER_PORT") or os.getenv("API_PORT") or os.getenv("PORT")
-            machine_port = int(port_value) if port_value else 8000
+            machine_port = int(port_value) if port_value else app_container.config().PORT
         except (ValueError, TypeError):
             # Fallback to default port
-            machine_port = 8000
+            machine_port = app_container.config().PORT
         
         logger.info(f"Retrieved system info: machine_id={machine_id}, hostname={hostname}, ip={machine_ip}, port={machine_port}")
         

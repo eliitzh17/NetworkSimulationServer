@@ -11,6 +11,7 @@ from pymongo.bulk import BulkWriteError
 from app.models.pageination_models import CursorPaginationRequest, CursorPaginationResponse
 from pydantic import TypeAdapter
 from app.models.statuses_enums import TopologyStatusEnum, LinkStatusEnum
+from app.app_container import app_container
 class TopologiesSimulationsDB:
     """
     Repository for CRUD operations on TopologiesSimulation documents in MongoDB.
@@ -19,7 +20,7 @@ class TopologiesSimulationsDB:
     db_logger = LoggerManager.get_logger('topologies_simulation_db')
 
     def __init__(self, db):
-        self.collection = db[os.getenv("TOPOLOGIES_SIMULATIONS_COLLECTION")]
+        self.collection = db[app_container.config().TOPOLOGIES_SIMULATIONS_COLLECTION]
 
     async def store_topologies_simulations(self, topologies_simulations: List[TopologySimulation], session=None) -> List[TopologySimulation]:
         """

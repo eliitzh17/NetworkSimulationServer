@@ -27,7 +27,7 @@
             "name": "simulations_worker consumer",
             "type": "debugpy",
             "request": "launch",
-            "module": "app.workers.consumer_workers.simulations_worker"
+            "module": "app.workers.consumer_workers.consumer_simulations_worker"
         },
         {
             "name": "links_worker consumer",

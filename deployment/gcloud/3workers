@@ -90,10 +90,10 @@
   --image=us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest \
   --platform managed \
   --region=us-central1 \
-  --port=8080 \
   --allow-unauthenticated \
   --memory 512Mi \
   --cpu 1 \
+  --port 8080 \
   --min-instances 1 \
   --max-instances 1 \
   --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \

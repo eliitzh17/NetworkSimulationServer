@@ -48,13 +48,11 @@ services:
   consumer_simulations_worker:
     build:
       context: ..
-      dockerfile: Dockerfile.consumer_simulations_worker
-    env_file:
-      - ../.env
+      dockerfile: Dockerfile
     environment:
       PYTHONPATH: /app
       MONGODB_URI: "mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
       MONGODB_DB: "network_sim_db"
       RABBITMQ_URL: "amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv"
     restart: unless-stopped
-    command: [ "python", "app/workers/handle_in_post_link_worker.py" ]
+    command: [ "python", "app/workers/consumer_workers/consumer_simulations_worker.py" ]

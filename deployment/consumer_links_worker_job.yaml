@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: consumer-links-worker
+spec:
+  template:
+    spec:
+      containers:
+      - name: consumer-links-worker
+        image: gcr.io/[YOUR-PROJECT-ID]/consumer-links-worker:latest
+        command: ["python", "-m", "app.workers.consumer_workers.consumer_links_worker"]
+        env:
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: uri
+        - name: RABBITMQ_URI
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-secret
+              key: uri
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      restartPolicy: OnFailure 

@@ -1,0 +1,30 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: publish-simulations-worker
+spec:
+  template:
+    spec:
+      containers:
+      - name: publish-simulations-worker
+        image: gcr.io/[YOUR-PROJECT-ID]/publish-simulations-worker:latest
+        command: ["python", "-m", "app.workers.outbox_publishers_workers.publish_simulations_worker"]
+        env:
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: uri
+        - name: RABBITMQ_URI
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-secret
+              key: uri
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      restartPolicy: OnFailure 

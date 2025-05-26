@@ -110,4 +110,4 @@ class MultiQueueConsumerWorker(BaseConsumerWorker):
         await asyncio.Future()  # Keep the worker alive 
         
 if __name__ == "__main__":
-    MultiQueueConsumerWorker.main() 
+    asyncio.run(MultiQueueConsumerWorker.main()) 

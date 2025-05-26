@@ -1,7 +1,7 @@
 from app.workers.consumer_workers.base_consumer_worker import BaseConsumerWorker
 from app.bus_messages.consumers.run_links_consumer import LinksConsumer
 from aio_pika import ExchangeType
-import os
+import asyncio
 
 class LinksConsumerWorker(BaseConsumerWorker):
     LOGGER_NAME = "links_consumer"
@@ -14,4 +14,4 @@ class LinksConsumerWorker(BaseConsumerWorker):
     USE_CONFIG_FOR_QUEUE = False
 
 if __name__ == "__main__":
-    LinksConsumerWorker.main() 
+    asyncio.run(LinksConsumerWorker.main()) 

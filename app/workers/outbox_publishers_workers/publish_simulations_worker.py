@@ -38,4 +38,4 @@ def main():
     asyncio.run(setup_and_run())
 
 if __name__ == "__main__":
-    main() 
+    asyncio.run(main()) 

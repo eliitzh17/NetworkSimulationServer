@@ -65,13 +65,9 @@ class MultiQueueConsumerWorker(BaseConsumerWorker):
         rabbitmq_client = RabbitMQClient(rabbitmq_url)
 
         # Exchange name
-        if self.USE_CONFIG_FOR_EXCHANGE:
-            exchange_name = getattr(app_container.config, self.EXCHANGE_ENV)
-        else:
-            exchange_name = app_container.config().EXCHANGE_ENV
         from app.bus_messages.rabbit_mq_manager import RabbitMQManager
         exchange_configs = [
-            {"name": exchange_name, "type": self.EXCHANGE_TYPE, "durable": True},
+            {"name": self.EXCHANGE_ENV, "type": self.EXCHANGE_TYPE, "durable": True},
         ]
         rabbitmq_manager = RabbitMQManager(rabbitmq_client, exchange_configs)
         await rabbitmq_manager.setup_exchanges()
@@ -79,14 +75,14 @@ class MultiQueueConsumerWorker(BaseConsumerWorker):
         # Setup all consumers
         tasks = []
         for consumer_cfg in self.CONSUMER_CONFIGS:
-            queue_name = app_container.config().QUEUE_ENV
+            queue_name =consumer_cfg['queue_env']
             if queue_name is None:
                 logger.error(f"Queue {consumer_cfg['queue_env']} not found")
                 continue
             
             main_queue, retry_queue, dead_letter_queue = await rabbitmq_manager.setup_queue_with_retry(
                 queue_name=queue_name,
-                exchange_name=exchange_name
+                exchange_name=self.EXCHANGE_ENV
             )
             queues = {
                 "main": main_queue,

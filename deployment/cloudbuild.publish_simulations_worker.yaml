@@ -2,4 +2,5 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: ['build', '-t', 'us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest', '-f', 'deployment/Dockerfile.publish_simulations_worker', '.']
 images:
-- 'us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest' 
+- 'us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest'
+logging: CLOUD_LOGGING_ONLY 

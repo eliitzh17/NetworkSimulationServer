@@ -18,6 +18,7 @@ class BaseConsumer:
         dead_letter_queue: Optional[aio_pika.Queue] = None,
         max_retries: int = 3,
         retry_delay: int = 1,
+        max_concurrent_tasks: int = 3,
     ):
         self.db = db
         self.queue = queue
@@ -26,14 +27,24 @@ class BaseConsumer:
         self.logger = LoggerManager.get_logger(logger_name)
         self.max_retries = max_retries
         self.retry_delay = retry_delay
+        self.semaphore = asyncio.Semaphore(max_concurrent_tasks)
 
     async def start_consuming(self):
         self.logger.info(f" [*] Waiting for messages on {self.queue.name}. To exit press CTRL+C")
         await self.queue.consume(self.on_message)
 
     async def on_message(self, message: aio_pika.IncomingMessage):
-        start_time = time.time()
         self.logger.info(f" [*] Received new message for {self.__class__.__name__}")
+        # Process each message in its own task for parallelism, but limit concurrency with semaphore
+        async def sem_task():
+            async with self.semaphore:
+                await self._process_message(message)
+        task = asyncio.create_task(sem_task())
+        # Optionally, track tasks if you want to await them later or handle errors
+        # self.processing_tasks.add(task)
+        # task.add_done_callback(self.processing_tasks.discard)
+
+    async def _process_message(self, message: aio_pika.IncomingMessage):
         try:
             async with message.process():
                 retry_count = self._get_retry_count(message)

@@ -20,17 +20,18 @@ class RabbitMQManager:
 
     def _load_config(self):
         config = get_config()
-        self.max_retries = getattr(config, 'RABBITMQ_MAX_RETRIES', 3)
-        self.retry_delay = getattr(config, 'RABBITMQ_INITIAL_RETRY_DELAY', 1)
-        self.retry_queue_ttl = getattr(config, 'RABBITMQ_RETRY_QUEUE_TTL', 10000)
-        self.prefetch_count = getattr(config, 'RABBITMQ_PREFETCH_COUNT', 1)
-        self.retry_exchange_suffix = getattr(config, 'RABBITMQ_RETRY_EXCHANGE_SUFFIX', '.dlx')
-        self.retry_queue_suffix = getattr(config, 'RABBITMQ_RETRY_QUEUE_SUFFIX', '.retry')
+        self.max_retries = config.RABBITMQ_MAX_RETRIES
+        self.retry_delay = config.RABBITMQ_INITIAL_RETRY_DELAY
+        self.retry_queue_ttl = config.RABBITMQ_RETRY_QUEUE_TTL
+        self.prefetch_count = config.RABBITMQ_PREFETCH_COUNT
+        self.retry_exchange_suffix = config.RABBITMQ_RETRY_EXCHANGE_SUFFIX
+        self.retry_queue_suffix = config.RABBITMQ_RETRY_QUEUE_SUFFIX
 
     async def setup_exchanges(self):
         self.logger.info("Setting up RabbitMQManager: connecting and declaring exchanges...")
         connection = await self.rabbit_mq_client.get_connection()
         self.channel = await connection.channel()
+        self.logger.info(f"New Channel created, will use prefetch count: {self.prefetch_count}")
         await self.channel.set_qos(prefetch_count=self.prefetch_count)
         for cfg in self.exchange_configs:
             name = cfg['name']
@@ -99,23 +100,60 @@ class RabbitMQManager:
         self,
         queue_name: str,
         exchange_name: str,
+        channel=None
     ) -> Tuple[Queue, Queue, Queue]:
         """
         Setup a queue with retry and DLX configuration.
         Returns (main_queue, retry_queue, dead_letter_queue)
         """
-        if not self.channel:
+        channel = channel or self.channel
+        if not channel:
             raise RuntimeError("RabbitMQManager not set up. Call setup() first.")
         exchange = self.get_exchange(exchange_name)
         if not exchange:
             raise ValueError(f"Exchange {exchange_name} not found")
         
         # Step 1: Setup DLX exchange
-        dlx_exchange, dlx_exchange_name = await self._declare_dlx_exchange(exchange_name)
+        dlx_exchange_name = f"{exchange_name}{self.retry_exchange_suffix}"
+        dlx_exchange = await channel.declare_exchange(
+            dlx_exchange_name,
+            ExchangeType.DIRECT,
+            durable=True
+        )
         # Step 2: Setup dead letter queue
-        dead_letter_queue, dead_letter_queue_name = await self._declare_dead_letter_queue(queue_name, dlx_exchange)
+        dead_letter_queue_name = f"{queue_name}.dlq"
+        dead_letter_queue = await channel.declare_queue(
+            dead_letter_queue_name,
+            durable=True
+        )
+        await dead_letter_queue.bind(dlx_exchange, routing_key=queue_name)
         # Step 3: Setup retry queue
-        retry_queue, _ = await self._declare_retry_queue(queue_name, exchange_name, dlx_exchange, dead_letter_queue_name)
+        retry_queue_name = f"{queue_name}{self.retry_queue_suffix}"
+        retry_queue = await channel.declare_queue(
+            retry_queue_name,
+            durable=True,
+            arguments={
+                'x-dead-letter-exchange': exchange_name,
+                'x-message-ttl': self.retry_queue_ttl,
+                'x-dead-letter-routing-key': dead_letter_queue_name
+            }
+        )
+        await retry_queue.bind(dlx_exchange, routing_key=queue_name)
         # Step 4: Setup main queue with DLX
-        main_queue = await self._declare_main_queue(queue_name, exchange_name, dlx_exchange_name, dead_letter_queue_name)
-        return main_queue, retry_queue, dead_letter_queue 
+        main_queue = await channel.declare_queue(
+            queue_name,
+            durable=True,
+            arguments={
+                'x-dead-letter-exchange': dlx_exchange_name,
+                'x-dead-letter-routing-key': dead_letter_queue_name  # Route to DLQ
+            }
+        )
+        await main_queue.bind(exchange_name, routing_key=queue_name)
+        return main_queue, retry_queue, dead_letter_queue
+
+    async def create_consumer_channel(self):
+        """Create a new channel for a consumer, with prefetch_count set."""
+        connection = await self.rabbit_mq_client.get_connection()
+        channel = await connection.channel()
+        await channel.set_qos(prefetch_count=self.prefetch_count)
+        return channel 

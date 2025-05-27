@@ -1,0 +1,209 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-consumer-simulations
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-consumer-simulations
+  template:
+    metadata:
+      labels:
+        app: worker-consumer-simulations
+    spec:
+      containers:
+      - name: worker-consumer-simulations
+        image: network-simulation-server:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "app/workers/consumer_workers/consumer_simulations_worker.py"]
+        env:
+        - name: PYTHONPATH
+          value: /app
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: network-secrets
+              key: mongodb-uri
+        - name: MONGODB_DB
+          value: network_sim_db
+        - name: RABBITMQ_URL
+          valueFrom:
+            secretKeyRef:
+              name: network-secrets
+              key: rabbitmq-url
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-consumer-links
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-consumer-links
+  template:
+    metadata:
+      labels:
+        app: worker-consumer-links
+    spec:
+      containers:
+      - name: worker-consumer-links
+        image: network-simulation-server:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "app/workers/consumer_workers/consumer_links_worker.py"]
+        env:
+        - name: PYTHONPATH
+          value: /app
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: network-secrets
+              key: mongodb-uri
+        - name: MONGODB_DB
+          value: network_sim_db
+        - name: RABBITMQ_URL
+          valueFrom:
+            secretKeyRef:
+              name: network-secrets
+              key: rabbitmq-url
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-publish-simulations
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-publish-simulations
+  template:
+    metadata:
+      labels:
+        app: worker-publish-simulations
+    spec:
+      containers:
+      - name: worker-publish-simulations
+        image: network-simulation-server:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "app/workers/outbox_publishers_workers/publish_simulations_worker.py"]
+        env:
+        - name: PYTHONPATH
+          value: /app
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: network-secrets
+              key: mongodb-uri
+        - name: MONGODB_DB
+          value: network_sim_db
+        - name: RABBITMQ_URL
+          valueFrom:
+            secretKeyRef:
+              name: network-secrets
+              key: rabbitmq-url
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-publish-links
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-publish-links
+  template:
+    metadata:
+      labels:
+        app: worker-publish-links
+    spec:
+      containers:
+      - name: worker-publish-links
+        image: network-simulation-server:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "app/workers/outbox_publishers_workers/publish_links_worker.py"]
+        env:
+        - name: PYTHONPATH
+          value: /app
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: network-secrets
+              key: mongodb-uri
+        - name: MONGODB_DB
+          value: network_sim_db
+        - name: RABBITMQ_URL
+          valueFrom:
+            secretKeyRef:
+              name: network-secrets
+              key: rabbitmq-url
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker-publish-completed
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker-publish-completed
+  template:
+    metadata:
+      labels:
+        app: worker-publish-completed
+    spec:
+      containers:
+      - name: worker-publish-completed
+        image: network-simulation-server:latest
+        imagePullPolicy: IfNotPresent
+        command: ["python", "app/workers/outbox_publishers_workers/publish_completed_worker.py"]
+        env:
+        - name: PYTHONPATH
+          value: /app
+        - name: MONGODB_URI
+          valueFrom:
+            secretKeyRef:
+              name: network-secrets
+              key: mongodb-uri
+        - name: MONGODB_DB
+          value: network_sim_db
+        - name: RABBITMQ_URL
+          valueFrom:
+            secretKeyRef:
+              name: network-secrets
+              key: rabbitmq-url
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "500m"
+            memory: "512Mi" 

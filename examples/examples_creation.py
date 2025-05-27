@@ -1,133 +1,233 @@
 import json
 import random
-import string
-import argparse
-from typing import List, Dict, Any
 
-def generate_node_name(existing_nodes: List[str], name_length: int = 1) -> str:
-    """Generate a unique node name that doesn't exist in the list of nodes."""
-    while True:
-        if name_length == 1:
-            # Single letter nodes (A, B, C, etc.)
-            node_name = random.choice(string.ascii_uppercase)
-        else:
-            # Node names with prefix like N1, N2, etc.
-            prefix = random.choice(string.ascii_uppercase)
-            suffix = str(random.randint(1, 99))
-            node_name = f"{prefix}{suffix}"
-        
-        if node_name not in existing_nodes:
-            return node_name
-
-def generate_topology(min_nodes: int = 20, max_nodes: int = 100) -> Dict[str, Any]:
-    """Generate a random network topology with nodes and links."""
+def generate_topology(topology_num, nodes_range, links_range, ensure_valid_nodes=True):
+    """
+    Generate a network topology
+    
+    Args:
+        topology_num (int): Topology identifier number
+        nodes_range (tuple): (min_nodes, max_nodes) range for number of nodes
+        links_range (tuple): (min_links, max_links) range for number of links
+        ensure_valid_nodes (bool): If True, ensure all links connect existing nodes
+    
+    Returns:
+        dict: Network topology in the specified JSON structure
+    """
+    
+    # Generate random number of nodes within range
+    min_nodes, max_nodes = nodes_range
     num_nodes = random.randint(min_nodes, max_nodes)
     
-    # Generate nodes
-    nodes = []
-    for _ in range(num_nodes):
-        # Decide whether to use single-letter or prefix-number style
-        name_style = random.choice([1, 2])
-        node_name = generate_node_name(nodes, name_style)
-        nodes.append(node_name)
+    # Generate nodes with names like "T001_Node001", "T001_Node002", etc.
+    nodes = [f"T{topology_num:03d}_Node{i:03d}" for i in range(1, num_nodes + 1)]
     
-    # Generate links
+    # Generate random number of links within range
+    min_links, max_links = links_range
+    num_links = random.randint(min_links, max_links)
+    
+    # If ensuring valid nodes, limit max links to avoid impossible scenarios
+    if ensure_valid_nodes:
+        # Maximum possible unique connections in a directed graph (avoiding self-loops)
+        max_possible_links = num_nodes * (num_nodes - 1)
+        num_links = min(num_links, max_possible_links)
+    
     links = []
+    existing_connections = set()
     
-    # Ensure connectivity by creating a path through all nodes
-    for i in range(num_nodes - 1):
-        from_node = nodes[i]
-        to_node = nodes[i + 1]
-        latency = random.randint(1, 30)
-        links.append({
-            "from_node": from_node,
-            "to_node": to_node,
-            "latency": latency
-        })
-    
-    # Add some random additional links for more complex topologies
-    num_additional_links = random.randint(0, num_nodes)
-    for _ in range(num_additional_links):
-        from_idx = random.randint(0, num_nodes - 1)
-        to_idx = random.randint(0, num_nodes - 1)
+    for _ in range(num_links):
+        attempts = 0
         
-        # Avoid self-loops and duplicate links
-        if from_idx != to_idx:
-            from_node = nodes[from_idx]
-            to_node = nodes[to_idx]
+        while attempts < 100:  # Increased attempts for larger topologies
+            if ensure_valid_nodes:
+                # Select from existing nodes
+                from_node = random.choice(nodes)
+                to_node = random.choice(nodes)
+                
+                # Ensure we don't connect a node to itself
+                if from_node != to_node:
+                    connection_key = f"{from_node}-{to_node}"
+                    
+                    # Check for duplicate connections
+                    if connection_key not in existing_connections:
+                        existing_connections.add(connection_key)
+                        
+                        # Generate random latency between 1 and 200s
+                        latency = random.randint(1, 10)
+                        
+                        links.append({
+                            "from_node": from_node,
+                            "to_node": to_node,
+                            "latency": latency
+                        })
+                        break
+            else:
+                # Generate potentially invalid node names for testing
+                from_node = f"T{topology_num:03d}_Node{random.randint(1, max_nodes + 50):03d}"
+                to_node = f"T{topology_num:03d}_Node{random.randint(1, max_nodes + 50):03d}"
+                
+                if from_node != to_node:
+                    connection_key = f"{from_node}-{to_node}"
+                    
+                    if connection_key not in existing_connections:
+                        existing_connections.add(connection_key)
+                        
+                        latency = random.randint(1, 10)
+                        
+                        links.append({
+                            "from_node": from_node,
+                            "to_node": to_node,
+                            "latency": latency
+                        })
+                        break
             
-            # Check if this link already exists
-            link_exists = any(
-                link["from_node"] == from_node and link["to_node"] == to_node
-                for link in links
-            )
-            
-            if not link_exists:
-                latency = random.randint(1, 30)
-                links.append({
-                    "from_node": from_node,
-                    "to_node": to_node,
-                    "latency": latency
-                })
+            attempts += 1
+    
+    # Generate random config values
+    config = {
+        "duration_sec": random.randint(10, 100),  # 30-900 seconds
+        "packet_loss_percent": round(random.uniform(0, 15), 2),  # 0-15% with 2 decimal places
+        "log_level": random.choice(["debug", "info", "warn", "error"])
+    }
     
     return {
         "topology": {
             "nodes": nodes,
             "links": links
-        }
+        },
+        "config": config
     }
 
-def generate_config() -> Dict[str, Any]:
-    """Generate a random configuration."""
-    duration_options = [30, 60, 90, 120, 180, 240, 300]
-    log_levels = ["debug", "info", "warning", "error"]
+def generate_multiple_topologies(count, nodes_range, links_range, ensure_valid_nodes=True):
+    """
+    Generate multiple network topologies as an array
     
-    return {
-        "duration_sec": random.choice(duration_options),
-        "packet_loss_percent": round(random.uniform(0, 5.0), 1),
-        "log_level": random.choice(log_levels)
-    }
+    Args:
+        count (int): Number of topologies to generate
+        nodes_range (tuple): (min_nodes, max_nodes) range for number of nodes
+        links_range (tuple): (min_links, max_links) range for number of links
+        ensure_valid_nodes (bool): If True, ensure all links connect existing nodes
+    
+    Returns:
+        list: List of generated topologies
+    """
+    
+    topologies = []
+    
+    for i in range(1, count + 1):
+        topology = generate_topology(i, nodes_range, links_range, ensure_valid_nodes)
+        topologies.append(topology)
+    
+    return topologies
 
-def generate_network_config() -> Dict[str, Any]:
-    """Generate a complete network configuration."""
-    topology = generate_topology()
-    config = generate_config()
+def save_topologies_to_files():
+    """Generate and save multiple topology sets to JSON files"""
     
-    topology["config"] = config
-    return topology
+    # Generate small topologies
+    print("Generating small topologies...")
+    small_topologies = generate_multiple_topologies(
+        count=5,
+        nodes_range=(5, 20),
+        links_range=(3, 30),
+        ensure_valid_nodes=True
+    )
+    
+    # Save small topologies
+    with open('generated_topologies_small.json', 'w') as f:
+        json.dump(small_topologies, f, indent=2)
+    print("✓ Saved: generated_topologies_small.json")
+    
+    # Generate medium topologies
+    print("Generating medium topologies...")
+    medium_topologies = generate_multiple_topologies(
+        count=3,
+        nodes_range=(50, 150),
+        links_range=(75, 300),
+        ensure_valid_nodes=True
+    )
+    
+    # Save medium topologies
+    with open('generated_topologies_medium.json', 'w') as f:
+        json.dump(medium_topologies, f, indent=2)
+    print("✓ Saved: generated_topologies_medium.json")
+    
+    # Generate large topologies
+    print("Generating large topologies...")
+    large_topologies = generate_multiple_topologies(
+        count=2,
+        nodes_range=(500, 1000),
+        links_range=(1000, 2500),
+        ensure_valid_nodes=True
+    )
+    
+    # Save large topologies
+    with open('generated_topologies_large.json', 'w') as f:
+        json.dump(large_topologies, f, indent=2)
+    print("✓ Saved: generated_topologies_large.json")
+    
+    # Generate mixed size topologies in one file
+    print("Generating mixed topologies...")
+    mixed_topologies = []
+    
+    # Add various sized topologies to the mixed collection
+    for i in range(1, 11):
+        if i <= 3:  # Small
+            topo = generate_topology(i, (10, 30), (15, 50), True)
+        elif i <= 7:  # Medium
+            topo = generate_topology(i, (100, 200), (150, 400), True)
+        else:  # Large
+            topo = generate_topology(i, (800, 1200), (1500, 3000), True)
+        
+        mixed_topologies.append(topo)
+    
+    # Save mixed topologies
+    with open('generated_topologies.json', 'w') as f:
+        json.dump(mixed_topologies, f, indent=2)
+    print("✓ Saved: generated_topologies.json")
+    
+    # Print statistics
+    print("\n=== Generation Complete ===")
+    print(f"Small topologies: {len(small_topologies)} topologies")
+    print(f"Medium topologies: {len(medium_topologies)} topologies")
+    print(f"Large topologies: {len(large_topologies)} topologies")
+    print(f"Mixed topologies: {len(mixed_topologies)} topologies")
+    
+    # Detailed statistics
+    print("\n=== Detailed Statistics ===")
+    all_files = [
+        ("Small", small_topologies),
+        ("Medium", medium_topologies), 
+        ("Large", large_topologies),
+        ("Mixed", mixed_topologies)
+    ]
+    
+    for file_type, data in all_files:
+        print(f"\n{file_type} Topologies:")
+        for i, topo_data in enumerate(data, 1):
+            nodes_count = len(topo_data['topology']['nodes'])
+            links_count = len(topo_data['topology']['links'])
+            duration = topo_data['config']['duration_sec']
+            packet_loss = topo_data['config']['packet_loss_percent']
+            print(f"  Topology {i}: {nodes_count} nodes, {links_count} links, "
+                  f"{duration}s duration, {packet_loss}% loss")
 
 def main():
-    """Main function to generate and output network configurations."""
-    parser = argparse.ArgumentParser(description='Generate network topology JSON configurations')
-    parser.add_argument('-n', '--num-configs', type=int, default=10, 
-                        help='Number of configurations to generate (default: 10)')
-    parser.add_argument('-o', '--output', type=str, default='network_configs.json',
-                        help='Output file path (default: network_configs.json)')
-    parser.add_argument('--pretty', action='store_true',
-                        help='Format JSON with indentation for readability')
-    args = parser.parse_args()
+    save_topologies_to_files()
+
+def generate_custom_topologies():
+    """
+    Function to generate custom topologies - modify parameters as needed
+    """
     
-    # Generate configurations
-    configurations = []
-    for _ in range(args.num_configs):
-        config = generate_network_config()
-        configurations.append(config)
+    # Large topology example
+    large_topology = generate_multiple_topologies(
+        count=1,
+        nodes_range=(800, 1200),
+        links_range=(1500, 3000),
+        ensure_valid_nodes=True
+    )
     
-    # Write to file
-    indent = 2 if args.pretty else None
-    with open(args.output, 'w') as f:
-        json.dump(configurations, f, indent=indent)
-    
-    print(f"Generated {args.num_configs} network configurations and saved to {args.output}")
-    
-    # Print sample of output
-    sample_size = min(3, args.num_configs)
-    print(f"\nSample of {sample_size} configurations:")
-    for i, config in enumerate(configurations[:sample_size]):
-        num_nodes = len(config["topology"]["nodes"])
-        num_links = len(config["topology"]["links"])
-        print(f"Configuration {i+1}: {num_nodes} nodes, {num_links} links")
-    print(json.dumps(configurations[:sample_size], indent=2))
+    return large_topology
 
 if __name__ == "__main__":
-    main()
+    main()  # Generate and save all topology files

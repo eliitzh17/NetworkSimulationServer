@@ -78,6 +78,11 @@ class BaseConfig:
             value = getattr(self, field)
             if value is not None:
                 os.environ[field] = str(value)
+                
+    def get(self, key: str) -> str:
+        if not hasattr(self, key):
+            raise ConfigError(f"Invalid key: {key}")
+        return getattr(self, key)
 
 class ProdConfig(BaseConfig):
     @staticmethod

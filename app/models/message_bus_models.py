@@ -13,3 +13,5 @@ class OutboxPublisher(BaseModel):
     initial_delay: int
     max_retries: int
     retry_delay: int
+    max_concurrent_publishes: int = 10
+    batch_size: int = 100

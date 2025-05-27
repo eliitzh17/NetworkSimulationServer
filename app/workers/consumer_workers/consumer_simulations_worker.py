@@ -1,19 +1,18 @@
-import os
 import asyncio
 from aio_pika import ExchangeType
 from app.workers.consumer_workers.base_consumer_worker import BaseConsumerWorker
 from app.bus_messages.consumers.base_consumer import BaseConsumer
 from app.utils.logger import LoggerManager
 from app.bus_messages.consumers.simulations_consumer import SimulationConsumer
+from app.app_container import app_container
+from app.bus_messages.rabbit_mq_manager import RabbitMQManager
+from app.bus_messages.rabbit_mq_client import RabbitMQClient
 
 class MultiQueueConsumerWorker(BaseConsumerWorker):
     LOGGER_NAME = "multi_queue_consumer"
     EXCHANGE_ENV = "SIMULATION_EXCHANGE"
     EXCHANGE_TYPE = ExchangeType.DIRECT
-    USE_CONFIG_FOR_RABBITMQ_URL = True
-    USE_CONFIG_FOR_EXCHANGE = False
-    USE_CONFIG_FOR_QUEUE = False
-    CONSUMER_CLASS = SimulationConsumer  # Replace with your actual consumer class
+    CONSUMER_CLASS = SimulationConsumer
 
     # List of dicts, each dict configures a consumer for a queue
     CONSUMER_CONFIGS = [
@@ -51,23 +50,15 @@ class MultiQueueConsumerWorker(BaseConsumerWorker):
 
     async def setup_and_run(self):
         logger = LoggerManager.get_logger(self.LOGGER_NAME)
-        from app.app_container import app_container
         mongo_manager = app_container.mongo_manager()
         await mongo_manager.connect()
-        db = getattr(mongo_manager, 'db', None)
 
         # RabbitMQ URL
-        if self.USE_CONFIG_FOR_RABBITMQ_URL:
-            rabbitmq_url = app_container.config().RABBITMQ_URL
-        else:
-            rabbitmq_url = app_container.config().RABBITMQ_URL
-        from app.bus_messages.rabbit_mq_client import RabbitMQClient
-        rabbitmq_client = RabbitMQClient(rabbitmq_url)
+        rabbitmq_client = RabbitMQClient(app_container.config().RABBITMQ_URL)
 
         # Exchange name
-        from app.bus_messages.rabbit_mq_manager import RabbitMQManager
         exchange_configs = [
-            {"name": self.EXCHANGE_ENV, "type": self.EXCHANGE_TYPE, "durable": True},
+            {"name": app_container.config().get(self.EXCHANGE_ENV), "type": self.EXCHANGE_TYPE, "durable": True},
         ]
         rabbitmq_manager = RabbitMQManager(rabbitmq_client, exchange_configs)
         await rabbitmq_manager.setup_exchanges()
@@ -75,22 +66,20 @@ class MultiQueueConsumerWorker(BaseConsumerWorker):
         # Setup all consumers
         tasks = []
         for consumer_cfg in self.CONSUMER_CONFIGS:
-            queue_name =consumer_cfg['queue_env']
+            queue_name = consumer_cfg['queue_env']
             if queue_name is None:
                 logger.error(f"Queue {consumer_cfg['queue_env']} not found")
                 continue
-            
+           
+            # Create channel and setup queues 
+            channel = await rabbitmq_manager.create_consumer_channel()
             main_queue, retry_queue, dead_letter_queue = await rabbitmq_manager.setup_queue_with_retry(
-                queue_name=queue_name,
-                exchange_name=self.EXCHANGE_ENV
+                queue_name=app_container.config().get(queue_name),
+                exchange_name=app_container.config().get(self.EXCHANGE_ENV),
+                channel=channel  # Pass the channel
             )
-            queues = {
-                "main": main_queue,
-                "retry": retry_queue,
-                "dlq": dead_letter_queue
-            }
             consumer_kwargs = dict(
-                db=db,
+                db=mongo_manager.db,
                 queue=main_queue,
                 logger_name=f"{self.LOGGER_NAME}_{queue_name}",
                 retry_queue=retry_queue,

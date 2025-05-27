@@ -14,9 +14,6 @@ class BaseConsumerWorker:
     EXCHANGE_TYPE = ExchangeType.DIRECT
     QUEUE_ENV = None
     CONSUMER_CLASS = None
-    USE_CONFIG_FOR_RABBITMQ_URL = True
-    USE_CONFIG_FOR_EXCHANGE = False
-    USE_CONFIG_FOR_QUEUE = False
     EXTRA_CONSUMER_KWARGS = None  # dict or None
 
     @classmethod
@@ -30,55 +27,36 @@ class BaseConsumerWorker:
         db = getattr(mongo_manager, 'db', None)
 
         # RabbitMQ URL
-        if self.USE_CONFIG_FOR_RABBITMQ_URL:
-            rabbitmq_url = app_container.config().RABBITMQ_URL
-        else:
-            rabbitmq_url = app_container.config().RABBITMQ_URL
+        rabbitmq_url = app_container.config().RABBITMQ_URL
         rabbitmq_client = RabbitMQClient(rabbitmq_url)
 
         # Exchange name
-        if self.USE_CONFIG_FOR_EXCHANGE:
-            exchange_name = getattr(app_container.config, self.EXCHANGE_ENV)
-        else:
-            exchange_name = app_container.config().EXCHANGE_ENV
+        exchange_name = app_container.config().get(self.EXCHANGE_ENV)
         exchange_configs = [
             {"name": exchange_name, "type": self.EXCHANGE_TYPE, "durable": True},
         ]
         rabbitmq_manager = RabbitMQManager(rabbitmq_client, exchange_configs)
         await rabbitmq_manager.setup_exchanges()
 
-        # Queue name
-        if self.USE_CONFIG_FOR_QUEUE:
-            queue_name = getattr(app_container.config, self.QUEUE_ENV)
-        else:
-            queue_name = app_container.config().QUEUE_ENV
-
+        # Create a new channel for the consumer
+        channel = await rabbitmq_manager.create_consumer_channel()
         main_queue, retry_queue, dead_letter_queue = await rabbitmq_manager.setup_queue_with_retry(
-            queue_name=queue_name,
-            exchange_name=exchange_name
+            queue_name=app_container.config().get(self.QUEUE_ENV),
+            exchange_name=exchange_name,
+            channel=channel
         )
-
-        queues = {
-            "main": main_queue,
-            "retry": retry_queue,
-            "dlq": dead_letter_queue
-        }
-
         consumer_kwargs = dict(
             db=db,
             queue=main_queue,
-            logger_name=self.LOGGER_NAME,
+            logger_name=f"{self.LOGGER_NAME}",
             retry_queue=retry_queue,
             dead_letter_queue=dead_letter_queue,
         )
         # Add config-based kwargs if present
-        if hasattr(app_container.config, 'RABBITMQ_MAX_RETRIES'):
-            consumer_kwargs['max_retries'] = getattr(app_container.config, 'RABBITMQ_MAX_RETRIES', None)
-        if hasattr(app_container.config, 'RABBITMQ_INITIAL_RETRY_DELAY'):
-            consumer_kwargs['retry_delay'] = getattr(app_container.config, 'RABBITMQ_INITIAL_RETRY_DELAY', None)
+        consumer_kwargs['max_retries'] = app_container.config().RABBITMQ_MAX_RETRIES
+        consumer_kwargs['retry_delay'] = app_container.config().RABBITMQ_INITIAL_RETRY_DELAY
         if self.EXTRA_CONSUMER_KWARGS:
             consumer_kwargs.update(self.EXTRA_CONSUMER_KWARGS)
-
         consumer = self.CONSUMER_CLASS(**consumer_kwargs)
         await consumer.start_consuming()
         await asyncio.Future()  # Keep the worker alive 

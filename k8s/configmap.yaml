@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: network-config
+  namespace: default
+data:
+  MONGODB_DB: network_sim_db 

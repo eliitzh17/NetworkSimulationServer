@@ -9,9 +9,6 @@ class LinksConsumerWorker(BaseConsumerWorker):
     EXCHANGE_TYPE = ExchangeType.DIRECT
     QUEUE_ENV = "RUN_LINKS_QUEUE"
     CONSUMER_CLASS = LinksConsumer
-    USE_CONFIG_FOR_RABBITMQ_URL = False
-    USE_CONFIG_FOR_EXCHANGE = False
-    USE_CONFIG_FOR_QUEUE = False
 
 if __name__ == "__main__":
     asyncio.run(LinksConsumerWorker.main()) 

@@ -17,35 +17,7 @@ services:
     restart: unless-stopped
     command: [ "python", "main.py" ]
 
-  handle_simulation_worker:
-    build:
-      context: ..
-      dockerfile: Dockerfile
-    env_file:
-      - ../.env
-    environment:
-      PYTHONPATH: /app
-      MONGODB_URI: "mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-      MONGODB_DB: "network_sim_db"
-      RABBITMQ_URL: "amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv"
-    restart: unless-stopped
-    command: [ "python", "app/workers/handle_simulation_worker.py" ]
-
-  handle_links_worker:
-    build:
-      context: ..
-      dockerfile: Dockerfile
-    env_file:
-      - ../.env
-    environment:
-      PYTHONPATH: /app
-      MONGODB_URI: "mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-      MONGODB_DB: "network_sim_db"
-      RABBITMQ_URL: "amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv"
-    restart: unless-stopped
-    command: [ "python", "app/workers/handle_links_worker.py" ]
-
-  consumer_simulations_worker:
+  worker_consumer_simulations:
     build:
       context: ..
       dockerfile: Dockerfile
@@ -56,3 +28,51 @@ services:
       RABBITMQ_URL: "amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv"
     restart: unless-stopped
     command: [ "python", "app/workers/consumer_workers/consumer_simulations_worker.py" ]
+
+  worker_consumer_links:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      PYTHONPATH: /app
+      MONGODB_URI: "mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+      MONGODB_DB: "network_sim_db"
+      RABBITMQ_URL: "amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv"
+    restart: unless-stopped
+    command: [ "python", "app/workers/consumer_workers/consumer_links_worker.py" ]
+
+  worker_publish_simulations:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      PYTHONPATH: /app
+      MONGODB_URI: "mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+      MONGODB_DB: "network_sim_db"
+      RABBITMQ_URL: "amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv"
+    restart: unless-stopped
+    command: [ "python", "app/workers/outbox_publishers_workers/publish_simulations_worker.py" ]
+
+  worker_publish_links:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      PYTHONPATH: /app
+      MONGODB_URI: "mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+      MONGODB_DB: "network_sim_db"
+      RABBITMQ_URL: "amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv"
+    restart: unless-stopped
+    command: [ "python", "app/workers/outbox_publishers_workers/publish_links_worker.py" ]
+
+  worker_publish_completed:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      PYTHONPATH: /app
+      MONGODB_URI: "mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+      MONGODB_DB: "network_sim_db"
+      RABBITMQ_URL: "amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv"
+    restart: unless-stopped
+    command: [ "python", "app/workers/outbox_publishers_workers/publish_completed_worker.py" ]

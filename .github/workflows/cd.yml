@@ -65,6 +65,9 @@ jobs:
             docker tag $IMAGE_BASE/$IMAGE:${{ github.sha }} $IMAGE_BASE/$IMAGE:latest || true
             docker push $IMAGE_BASE/$IMAGE:latest || true
           done
+      - name: Install gke-gcloud-auth-plugin
+        run: |
+          gcloud components install kubectl
 
       - name: Deploy to GKE
         run: |

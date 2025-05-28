@@ -6,9 +6,6 @@ REGION="us-central1"  # Change to your desired region
 
 # Enable required APIs
 echo "Enabling required APIs..."
-gcloud services enable container.googleapis.com
-gcloud services enable cloudbuild.googleapis.com
-gcloud services enable containerregistry.googleapis.com
 
 # Create a GKE cluster (if you don't have one)
 echo "Creating GKE cluster..."
@@ -22,7 +19,6 @@ gcloud container clusters create network-simulation-cluster \
 # Get credentials for the cluster
 echo "Getting cluster credentials..."
 gcloud container clusters get-credentials network-simulation-cluster --region=$REGION
-
 
 
 # Build and push Docker images

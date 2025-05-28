@@ -1,66 +1,105 @@
-name: CI
+  name: CI
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  on:
 
-jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    pull_request:
+      branches: [ main ]
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
+  env:
+    PROJECT_ID: properties-observability
 
-      - name: Cache pip dependencies
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+  jobs:
+    build-and-test:
+      runs-on: ubuntu-latest
+      environment: prod
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install flake8
+        - name: Set up Python
+          uses: actions/setup-python@v4
+          with:
+            python-version: '3.10'
 
-      - name: Lint with flake8
-        run: |
-          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        - name: Cache pip dependencies
+          uses: actions/cache@v3
+          with:
+            path: ~/.cache/pip
+            key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+            restore-keys: |
+              ${{ runner.os }}-pip-
 
-      - name: Build Docker image
-        run: |
-          docker build -t network-simulation-server -f Dockerfile .
+        - name: Install dependencies
+          run: |
+            python -m pip install --upgrade pip
+            pip install -r requirements.txt
+            pip install flake8
 
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
-        with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+        - name: Lint with flake8
+          run: |
+            flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+            flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-      - name: Set up gcloud CLI
-        uses: google-github-actions/setup-gcloud@v2
+        - name: Authenticate to Google Cloud
+          uses: google-github-actions/auth@v2
+          with:
+            credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
-      - name: Configure Docker for Artifact Registry
-        run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev
+        - name: Configure Docker for Artifact Registry
+          run: |
+            gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
 
-      - name: Tag Docker image
-        run: |
-          docker tag network-simulation-server us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest
+        - name: Build and Push Docker Image
+          run: |
+            IMAGE="${{ secrets.GCP_REGION }}-docker.pkg.dev/${{ secrets.GCP_PROJECT }}/my-app:${{ github.sha }}"
+            docker build -t $IMAGE .
+            docker push $IMAGE
 
-      - name: Push Docker image to Artifact Registry
-        run: |
-          docker push us-central1-docker.pkg.dev/properties-observability/nss/network-simulation-server:latest
-
-      - name: Run tests (pytest)
-        run: |
-          if [ -d tests ]; then pytest; fi 
+    build-and-push-images:
+      runs-on: ubuntu-latest
+      needs: build-and-test
+      strategy:
+        matrix:
+          include:
+            - name: main-app
+              dockerfile: Dockerfile
+              build_args: ''
+              image_path: main-app
+            - name: consumer-simulations-worker
+              dockerfile: Dockerfile
+              build_args: '--build-arg WORKER_PATH=app/workers/consumer_workers/consumer_simulations_worker.py'
+              image_path: consumer-simulations-worker
+            - name: consumer-links-worker
+              dockerfile: Dockerfile
+              build_args: '--build-arg WORKER_PATH=app/workers/consumer_workers/consumer_links_worker.py'
+              image_path: consumer-links-worker
+            - name: publish-simulations-worker
+              dockerfile: Dockerfile
+              build_args: '--build-arg WORKER_PATH=app/workers/outbox_publishers_workers/publish_simulations_worker.py'
+              image_path: publish-simulations-worker
+            - name: publish-links-worker
+              dockerfile: Dockerfile
+              build_args: '--build-arg WORKER_PATH=app/workers/outbox_publishers_workers/publish_links_worker.py'
+              image_path: publish-links-worker
+            - name: publish-completed-worker
+              dockerfile: Dockerfile
+              build_args: '--build-arg WORKER_PATH=app/workers/outbox_publishers_workers/publish_completed_worker.py'
+              image_path: publish-completed-worker
+      steps:
+        - name: Checkout code
+          uses: actions/checkout@v4
+        - name: Authenticate to Google Cloud
+          uses: google-github-actions/auth@v2
+          with:
+            credentials_json: '${{ secrets.GCP_SA_KEY }}'
+        - name: Configure Docker for Artifact Registry
+          run: |
+            gcloud auth configure-docker ${{ secrets.GCP_REGION }}-docker.pkg.dev --quiet
+        - name: Build and Push ${{ matrix.name }} Docker Image
+          run: |
+            IMAGE="${{ secrets.GCP_PROJECT }}/${{ matrix.image_path }}:${{ github.sha }}"
+            docker build -t $IMAGE -f ${{ matrix.dockerfile }} ${{ matrix.build_args }} .
+            docker push $IMAGE
+        - name: Run tests (pytest)
+          run: |
+            if [ -d tests ]; then pytest; fi 

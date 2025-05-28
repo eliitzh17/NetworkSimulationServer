@@ -46,3 +46,6 @@ generated_topologies_small.json
 generated_topologies.json
 tasks
 k8s/secret.yaml
+k8s/dev/secret.yaml
+tasks
+tasks.txt

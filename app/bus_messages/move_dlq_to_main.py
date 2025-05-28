@@ -1,0 +1,44 @@
+import asyncio
+from app.bus_messages.rabbit_mq_manager import RabbitMQManager
+from app.bus_messages.rabbit_mq_client import RabbitMQClient
+from config import get_config
+
+async def move_dlq_to_main(queue_name: str, exchange_name: str):
+    # Setup RabbitMQManager
+    config = get_config()
+    rabbit_client = RabbitMQClient(config.RABBITMQ_URL)
+    exchange_configs = [
+        {"name": exchange_name, "type": "direct", "durable": True}
+    ]
+    manager = RabbitMQManager(rabbit_client, exchange_configs)
+    await manager.setup_exchanges()
+    await manager.setup_queue_with_retry(queue_name, exchange_name)
+    channel = manager.get_channel()
+
+    # Get queue objects
+    dlq_name = f"{queue_name}.dlq"
+    main_queue = await channel.get_queue(queue_name, ensure=True)
+    dlq_queue = await channel.get_queue(dlq_name, ensure=True)
+
+    print(f"Scanning DLQ: {dlq_name} for messages...")
+
+    # Consume all messages from DLQ and republish to main queue
+    async with dlq_queue.iterator() as queue_iter:
+        async for message in queue_iter:
+            async with message.process():
+                print(f"Found message in DLQ: {message.body}")
+                # Republish to main queue
+                await channel.default_exchange.publish(
+                    message,
+                    routing_key=queue_name
+                )
+                print(f"Moved message back to main queue: {queue_name}")
+
+if __name__ == "__main__":
+    import sys
+    if len(sys.argv) != 3:
+        print("Usage: python move_dlq_to_main.py <queue_name> <exchange_name>")
+        sys.exit(1)
+    queue_name = sys.argv[1]
+    exchange_name = sys.argv[2]
+    asyncio.run(move_dlq_to_main(queue_name, exchange_name)) 

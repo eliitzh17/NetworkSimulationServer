@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: $GCP_PROJECT/main-app:latest
+        image: gcr.io/$GCP_PROJECT/main-app:latest
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:

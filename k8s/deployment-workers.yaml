@@ -162,7 +162,7 @@ spec:
     spec:
       containers:
       - name: worker-publish-completed
-        image: $GCP_PROJECT/publish-completed-worker:latest
+        image: gcr.io/$GCP_PROJECT/publish-completed-worker:latest
         imagePullPolicy: IfNotPresent
         command: ["python", "app/workers/outbox_publishers_workers/publish_completed_worker.py"]
         envFrom:

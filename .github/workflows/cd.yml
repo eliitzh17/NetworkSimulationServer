@@ -49,6 +49,10 @@ jobs:
         run: |
           envsubst < k8s/deployment-workers.yaml > k8s/deployment-workers.generated.yaml
 
+      - name: Authenticate Docker to GCR
+        run: |
+          gcloud auth configure-docker
+          
       - name: Pull, tag, and push Docker images as latest
         run: |
           IMAGE_BASE="gcr.io/${{ secrets.GCP_PROJECT }}"
@@ -65,6 +69,7 @@ jobs:
             docker tag $IMAGE_BASE/$IMAGE:${{ github.sha }} $IMAGE_BASE/$IMAGE:latest || true
             docker push $IMAGE_BASE/$IMAGE:latest || true
           done
+
       - name: Install gke-gcloud-auth-plugin
         run: |
           gcloud components install kubectl

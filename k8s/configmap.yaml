@@ -5,3 +5,5 @@ metadata:
   namespace: default
 data:
   MONGODB_DB: network_sim_db 
+  MONGODB_DB_PROD: network_sim_db
+  ENV: prod

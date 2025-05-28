@@ -14,8 +14,11 @@ spec:
     spec:
       containers:
       - name: app
-        image: network-simulation-server:latest # Change if using a registry
+        image: gcr.io/properties-observability/main-app:latest
         imagePullPolicy: IfNotPresent
+        envFrom:
+        - configMapRef:
+            name: network-config
         env:
         - name: MONGODB_URI
           valueFrom:
@@ -45,7 +48,7 @@ kind: Service
 metadata:
   name: network-simulation-server
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: network-simulation-server
   ports:
@@ -53,9 +56,7 @@ spec:
       protocol: TCP
       port: 9090
       targetPort: 9090
-      nodePort: 30090
     - name: alt-http
       protocol: TCP
       port: 8080
-      targetPort: 8080
-      nodePort: 30080 
+      targetPort: 8080 

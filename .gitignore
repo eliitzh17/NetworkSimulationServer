@@ -40,3 +40,9 @@ coverage/
 
 # Existing ignore
 questions.txt
+generated_topologies_large.json
+generated_topologies_medium.json
+generated_topologies_small.json
+generated_topologies.json
+tasks
+k8s/secret.yaml

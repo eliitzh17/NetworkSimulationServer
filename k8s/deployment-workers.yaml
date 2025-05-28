@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: worker-consumer-simulations
-        image: ${{ secrets.GCP_PROJECT }}consumer-simulations-worker:latest
+        image: gcr.io/$GCP_PROJECT/consumer-simulations-worker:latest
         imagePullPolicy: IfNotPresent
         command: ["python", "app/workers/consumer_workers/consumer_simulations_worker.py"]
         envFrom:
@@ -50,7 +50,7 @@ spec:
     spec:
       containers:
       - name: worker-consumer-links
-        image: $GCP_PROJECT/consumer-links-worker:latest
+        image: gcr.io/$GCP_PROJECT/consumer-links-worker:latest
         imagePullPolicy: IfNotPresent
         command: ["python", "app/workers/consumer_workers/consumer_links_worker.py"]
         envFrom:
@@ -90,7 +90,7 @@ spec:
     spec:
       containers:
       - name: worker-publish-simulations
-        image: $GCP_PROJECT/publish-simulations-worker:latest
+        image: gcr.io/$GCP_PROJECT/publish-simulations-worker:latest
         imagePullPolicy: IfNotPresent
         command: ["python", "app/workers/outbox_publishers_workers/publish_simulations_worker.py"]
         envFrom:
@@ -126,7 +126,7 @@ spec:
     spec:
       containers:
       - name: worker-publish-links
-        image: $GCP_PROJECT/publish-links-worker:latest
+        image: gcr.io/$GCP_PROJECT/publish-links-worker:latest
         imagePullPolicy: IfNotPresent
         command: ["python", "app/workers/outbox_publishers_workers/publish_links_worker.py"]
         envFrom:

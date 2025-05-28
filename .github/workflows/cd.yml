@@ -61,9 +61,9 @@ jobs:
             publish-completed-worker
           "
           for IMAGE in $IMAGES; do
-            docker pull gcr.io$IMAGE_BASE/$IMAGE:${{ github.sha }} || true
-            docker tag gcr.io$IMAGE_BASE/$IMAGE:${{ github.sha }} $IMAGE_BASE/$IMAGE:latest || true
-            docker push gcr.io$IMAGE_BASE/$IMAGE:latest || true
+            docker pull $IMAGE_BASE/$IMAGE:${{ github.sha }} || true
+            docker tag $IMAGE_BASE/$IMAGE:${{ github.sha }} $IMAGE_BASE/$IMAGE:latest || true
+            docker push $IMAGE_BASE/$IMAGE:latest || true
           done
 
       - name: Deploy to GKE

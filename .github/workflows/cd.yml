@@ -38,6 +38,7 @@ jobs:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
           MONGODB_DB: ${{ secrets.MONGODB_DB }}
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
         run: |
           envsubst < k8s/deployment-app.yaml > k8s/deployment-app.generated.yaml
 
@@ -46,6 +47,7 @@ jobs:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
           RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
           MONGODB_DB: ${{ secrets.MONGODB_DB }}
+          GCP_PROJECT: ${{ secrets.GCP_PROJECT }}
         run: |
           envsubst < k8s/deployment-workers.yaml > k8s/deployment-workers.generated.yaml
 
@@ -65,9 +67,14 @@ jobs:
             publish-completed-worker
           "
           for IMAGE in $IMAGES; do
-            docker pull $IMAGE_BASE/$IMAGE:${{ github.sha }} || true
-            docker tag $IMAGE_BASE/$IMAGE:${{ github.sha }} $IMAGE_BASE/$IMAGE:latest || true
-            docker push $IMAGE_BASE/$IMAGE:latest || true
+            if gcloud container images list-tags $IMAGE_BASE/$IMAGE --filter="tags:${{ github.sha }}" --format="get(tags)" | grep -q "${{ github.sha }}"; then
+              echo "Image $IMAGE_BASE/$IMAGE:${{ github.sha }} exists. Pulling, tagging, and pushing as latest."
+              docker pull $IMAGE_BASE/$IMAGE:${{ github.sha }}
+              docker tag $IMAGE_BASE/$IMAGE:${{ github.sha }} $IMAGE_BASE/$IMAGE:latest
+              docker push $IMAGE_BASE/$IMAGE:latest
+            else
+              echo "Image $IMAGE_BASE/$IMAGE:${{ github.sha }} does not exist. Skipping."
+            fi
           done
 
       - name: Install gke-gcloud-auth-plugin

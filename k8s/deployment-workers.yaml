@@ -50,7 +50,7 @@ spec:
     spec:
       containers:
       - name: worker-consumer-links
-        image: ${{ secrets.GCP_PROJECT }}consumer-links-worker:latest
+        image: $GCP_PROJECT/consumer-links-worker:latest
         imagePullPolicy: IfNotPresent
         command: ["python", "app/workers/consumer_workers/consumer_links_worker.py"]
         envFrom:
@@ -60,11 +60,11 @@ spec:
         - name: PYTHONPATH
           value: /app
         - name: MONGODB_URI
-          value: "${MONGODB_URI}"
+          value: $MONGODB_URI
         - name: MONGODB_DB
-          value: "${MONGODB_DB}"
+          value: $MONGODB_DB
         - name: RABBITMQ_URL
-          value: "${MONGODB_DB}"
+          value: $RABBITMQ_URL
           
         resources:
           requests:
@@ -90,7 +90,7 @@ spec:
     spec:
       containers:
       - name: worker-publish-simulations
-        image: ${{ secrets.GCP_PROJECT }}publish-simulations-worker:latest
+        image: $GCP_PROJECT/publish-simulations-worker:latest
         imagePullPolicy: IfNotPresent
         command: ["python", "app/workers/outbox_publishers_workers/publish_simulations_worker.py"]
         envFrom:
@@ -126,7 +126,7 @@ spec:
     spec:
       containers:
       - name: worker-publish-links
-        image: ${{ secrets.GCP_PROJECT }}publish-links-worker:latest
+        image: $GCP_PROJECT/publish-links-worker:latest
         imagePullPolicy: IfNotPresent
         command: ["python", "app/workers/outbox_publishers_workers/publish_links_worker.py"]
         envFrom:
@@ -162,7 +162,7 @@ spec:
     spec:
       containers:
       - name: worker-publish-completed
-        image: ${{ secrets.GCP_PROJECT }}publish-completed-worker:latest
+        image: $GCP_PROJECT/publish-completed-worker:latest
         imagePullPolicy: IfNotPresent
         command: ["python", "app/workers/outbox_publishers_workers/publish_completed_worker.py"]
         envFrom:

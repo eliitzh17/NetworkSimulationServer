@@ -14,18 +14,18 @@ spec:
     spec:
       containers:
       - name: app
-        image: ${{ secrets.GCP_PROJECT }}/main-app:latest
+        image: $GCP_PROJECT/main-app:latest
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:
             name: network-config
         env:
         - name: MONGODB_URI
-          value: "${MONGODB_URI}"
+          value: $MONGODB_URI
         - name: MONGODB_DB
-          value: network_sim_db
+          value: $MONGODB_DB
         - name: RABBITMQ_URL
-          value: "${RABBITMQ_URL}"
+          value: $RABBITMQ_URL
         ports:
         - containerPort: 9090
         - containerPort: 8080

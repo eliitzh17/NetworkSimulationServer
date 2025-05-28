@@ -1,0 +1,77 @@
+name: CD
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+
+      - name: Set up gcloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials ${{ secrets.GKE_CLUSTER_NAME }} --region ${{ secrets.GCP_REGION }} --project ${{ secrets.GCP_PROJECT }}
+
+      - name: Set up kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+
+      - name: Substitute environment variables in deployment-app.yaml
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
+          MONGODB_DB: ${{ secrets.MONGODB_DB }}
+        run: |
+          envsubst < k8s/deployment-app.yaml > k8s/deployment-app.generated.yaml
+
+      - name: Substitute environment variables in deployment-workers.yaml
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          RABBITMQ_URL: ${{ secrets.RABBITMQ_URL }}
+          MONGODB_DB: ${{ secrets.MONGODB_DB }}
+        run: |
+          envsubst < k8s/deployment-workers.yaml > k8s/deployment-workers.generated.yaml
+
+      - name: Pull, tag, and push Docker images as latest
+        run: |
+          IMAGE_BASE="gcr.io/${{ secrets.GCP_PROJECT }}"
+          IMAGES="
+            main-app
+            consumer-simulations-worker
+            consumer-links-worker
+            publish-simulations-worker
+            publish-links-worker
+            publish-completed-worker
+          "
+          for IMAGE in $IMAGES; do
+            docker pull gcr.io$IMAGE_BASE/$IMAGE:${{ github.sha }} || true
+            docker tag gcr.io$IMAGE_BASE/$IMAGE:${{ github.sha }} $IMAGE_BASE/$IMAGE:latest || true
+            docker push gcr.io$IMAGE_BASE/$IMAGE:latest || true
+          done
+
+      - name: Deploy to GKE
+        run: |
+          kubectl apply -f k8s/configmap.yaml
+          kubectl apply -f k8s/deployment-app.generated.yaml
+          kubectl apply -f k8s/deployment-workers.generated.yaml
+
+      - name: Wait for deployments to be ready
+        run: |
+          kubectl wait --for=condition=available --timeout=300s deployment/network-simulation-server 

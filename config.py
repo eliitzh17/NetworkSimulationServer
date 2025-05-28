@@ -87,12 +87,12 @@ class BaseConfig:
 class ProdConfig(BaseConfig):
     @staticmethod
     def from_env() -> "ProdConfig":
-        return ProdConfig(**BaseConfig.from_env("MONGODB_DB_PROD").__dict__)
+        return ProdConfig(**BaseConfig.from_env("MONGODB_DB").__dict__)
 
 class DevConfig(BaseConfig):
     @staticmethod
     def from_env() -> "DevConfig":
-        return DevConfig(**BaseConfig.from_env("MONGODB_DB_DEV").__dict__)
+        return DevConfig(**BaseConfig.from_env("MONGODB_DB").__dict__)
 
 def get_config() -> BaseConfig:
     env = os.getenv("ENV", "").lower()

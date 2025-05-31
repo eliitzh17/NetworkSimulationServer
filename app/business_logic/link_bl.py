@@ -1,12 +1,12 @@
 from app.utils.logger import LoggerManager
 import asyncio
 from datetime import datetime
-from app.models.topolgy_simulation_models import TopologyStatusEnum, TopologySimulation
+from app.models.topolgy_simulation_models import TopologySimulation
 from app.db.events_db import EventsDB
 from app.business_logic.validators.links_validators import LinksValidators
 from app.models.statuses_enums import LinkStatusEnum
 from app.models.events_models import LinkEvent
-from app.db.topolgies_simulations_db import TopologiesSimulationsDB
+from app.db.topologies_simulations_db import TopologiesSimulationsDB
 from app.models.topolgy_simulation_models import LinkExecutionState
 
 class LinkBusinessLogic:
@@ -15,6 +15,16 @@ class LinkBusinessLogic:
         self.events_db = EventsDB(db)
         self.topologies_simulations_db = TopologiesSimulationsDB(db)
         self.validator_bl = LinksValidators()
+
+    async def _update_links_state(self, link_event: LinkEvent, simulation: TopologySimulation):
+        """
+        Update the final state of the link execution in a transaction.
+        This ensures that both the event and simulation updates are atomic.
+        """
+        async with await self.events_db.db.client.start_session() as session:
+            async with session.start_transaction():
+                await self.events_db.update_events_handled([link_event.event_id], session=session)
+                await self.topologies_simulations_db.update_simulation(link_event.sim_id, simulation, session=session)
 
     async def run_link(self, link_event: LinkEvent, is_last_retry: bool):
         if is_last_retry:
@@ -49,8 +59,7 @@ class LinkBusinessLogic:
             raise e
         finally:
             simulation, link_event = self.end_link_enrichment(simulation, link_event, link_exec_state)
-            await self.events_db.update_events_handled([link_event.event_id])
-            await self.topologies_simulations_db.update_simulation(simulation.sim_id, simulation)
+            await self._update_links_state(link_event, simulation)
 
     def end_link_enrichment(self, simulation: TopologySimulation, link_event: LinkEvent, link_exec_state: LinkExecutionState):
         

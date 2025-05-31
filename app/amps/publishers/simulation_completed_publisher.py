@@ -1,19 +1,19 @@
-from app.bus_messages.publishers.base_publisher import BasePublisher
+from app.amps.publishers.base_publisher import BasePublisher
 from app.models.statuses_enums import EventType
-import os
-from app.business_logic.topolgies_simulation_bl import TopologiesSimulationsBusinessLogic
+from app.business_logic.topologies_simulation_bl import TopologiesSimulationsBusinessLogic
 from app.models.pageination_models import CursorPaginationRequest
 from app.models.mapper import SimulationMapper
 import asyncio
 from app.db.events_db import EventsDB
 from app.models.topolgy_simulation_models import TopologySimulation
 from typing import List
+from app.app_container import app_container
 
 class SimulationCompletedPublisher(BasePublisher):
     def __init__(self, db, rabbitmq_manager, exchange_name):
         self.topologies_simulations_bl = TopologiesSimulationsBusinessLogic(db)
         self.events_db = EventsDB(db)
-        super().__init__(rabbitmq_manager, 'simulation_completed_publisher', exchange_name, db)
+        super().__init__(rabbitmq_manager, exchange_name, db, app_container.config().SIMULATION_QUEUE)
         
     async def filter_published_simulations(self, simulations: List[TopologySimulation]):
         sim_ids = [sim.sim_id for sim in simulations]

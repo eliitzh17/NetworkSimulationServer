@@ -1,19 +1,17 @@
 import asyncio
-from app.bus_messages.rabbit_mq_manager import RabbitMQManager
-from app.bus_messages.rabbit_mq_client import RabbitMQClient
-from config import get_config
+from app.amps.rabbit_mq_manager import RabbitMQManager
+from app.amps.rabbit_mq_client import RabbitMQClient
+from app.config import get_config
+from aiormq.abc import ExchangeType
 
 async def move_dlq_to_main(queue_name: str, exchange_name: str):
     # Setup RabbitMQManager
     config = get_config()
     rabbit_client = RabbitMQClient(config.RABBITMQ_URL)
-    exchange_configs = [
-        {"name": exchange_name, "type": "direct", "durable": True}
-    ]
-    manager = RabbitMQManager(rabbit_client, exchange_configs)
-    await manager.setup_exchanges()
+    manager = RabbitMQManager(rabbit_client)
+    await manager.setup_exchange(exchange_name, ExchangeType.TOPIC, True)
     await manager.setup_queue_with_retry(queue_name, exchange_name)
-    channel = manager.get_channel()
+    channel = manager.channel
 
     # Get queue objects
     dlq_name = f"{queue_name}.dlq"

@@ -1,7 +1,7 @@
 from motor.motor_asyncio import AsyncIOMotorClient
-from config import get_config
 from app.business_logic.exceptions import DatabaseError
 from app.utils.logger import LoggerManager
+from app.config import AppConfig
 
 COLLECTION_NAME = "simulations"
 
@@ -11,10 +11,10 @@ class MongoDBConnectionManager:
     """
     db_logger = LoggerManager.get_logger('mongodb')
     
-    def __init__(self):
-        config = get_config()
-        self.uri = config.MONGODB_URI
-        self.db_name = config.MONGODB_DB
+    def __init__(self, config: AppConfig):
+        self.config = config
+        self.uri = self.config.MONGODB_URI
+        self.db_name = self.config.MONGODB_DB
         self.client = None  
         self.db = None
 
@@ -33,22 +33,21 @@ class MongoDBConnectionManager:
     async def ensure_indexes(self):
         try:
             # Ensure unique index on sim_id for simulations collection
-            await self.db["simulations"].create_index(
-                [("sim_id", 1)], unique=True, name="sim_id_unique_idx"
+            await self.db["events"].create_index(
+                [("_id", 1)], name="event_id_unique_idx"
             )
-            self.db_logger.info("Ensured unique index on 'sim_id' for 'simulations' collection.")
+            self.db_logger.info("Ensured index on 'event_id' for 'events' collection.")
 
-            # Ensure unique index on id for simulation_meta_data collection
-            await self.db["simulation_meta_data"].create_index(
-                [("id", 1)], unique=True, name="meta_id_unique_idx"
+            await self.db["topologies"].create_index(
+                [("_id", 1)], name="topolgy_id_unique_idx"
             )
-            self.db_logger.info("Ensured unique index on 'id' for 'simulation_meta_data' collection.")
+            self.db_logger.info("Ensured index on 'topolgy_id' for 'topologies' collection.")
 
-            # Ensure unique index on sim_id for simulation_meta_data collection
-            await self.db["simulation_meta_data"].create_index(
-                [("sim_id", 1)], name="meta_sim_id_unique_idx"
+            await self.db["topologies_simulations"].create_index(
+                [("_id", 1)], name="topolgy_simulation_id_unique_idx"
             )
-            self.db_logger.info("Ensured unique index on 'sim_id' for 'simulation_meta_data' collection.")
+            self.db_logger.info("Ensured index on 'topolgy_simulation_id' for 'topologies_simulations' collection.")
+
         except Exception as e:
             self.db_logger.error(f"Error ensuring indexes: {str(e)}")
             raise DatabaseError(f"Could not ensure indexes: {str(e)}") from e

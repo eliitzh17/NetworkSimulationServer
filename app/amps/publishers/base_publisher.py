@@ -1,26 +1,28 @@
 import asyncio
 import json
 import traceback
-from abc import ABC, abstractmethod
-from aio_pika import Message, Exchange
+from abc import ABC
+from aio_pika import Message
 from aiormq.exceptions import ChannelInvalidStateError
 from app.utils.logger import LoggerManager
-from config import get_config
-from app.models.statuses_enums import EventType
 from app.db.events_db import EventsDB
-import os
-from app.bus_messages.rabbit_mq_manager import RabbitMQManager
-from app.app_container import app_container
-from typing import List
+from app.amps.rabbit_mq_manager import RabbitMQManager
 from app.models.message_bus_models import OutboxPublisher
+from app.amps.backpressure_manager import BackpressureManager
 
 class BasePublisher(ABC):
-    def __init__(self, rabbitmq_manager: RabbitMQManager, logger_name: str, exchange_name: str, db):
+    def __init__(self, rabbitmq_manager: RabbitMQManager, exchange_name: str, db, backpressure_queue_name: str):
+        self.logger = LoggerManager.get_logger(__name__)
         self.rabbitmq_manager = rabbitmq_manager
-        self.logger = LoggerManager.get_logger(logger_name)
         self.exchange_name = exchange_name
         self.events_db = EventsDB(db)
         self.outbox_publisher: OutboxPublisher = None
+        self.backpressure_queue_name = backpressure_queue_name
+        # Initialize backpressure manager
+        self.backpressure_manager = BackpressureManager(
+            rabbitmq_manager=self.rabbitmq_manager,
+            logger=self.logger
+        )
 
     def _serialize(self, obj):
         import datetime
@@ -62,7 +64,7 @@ class BasePublisher(ABC):
             async with semaphore:
                 for attempt in range(self.outbox_publisher.max_retries):
                     try:
-                        exchange = self.rabbitmq_manager.get_exchange(self.exchange_name)
+                        exchange = self.rabbitmq_manager.exchanges.get(self.exchange_name)
                         message = self._create_message(event)
                         await exchange.publish(message, routing_key=routing_key)
                         return
@@ -83,16 +85,20 @@ class BasePublisher(ABC):
     async def run_outbox_publisher(self):
         """
         Publishes a batch of new events of the given type that are published but not yet handled.
-        Marks them as handled in the DB if successful.
+        Implements queue size-based backpressure.
         """
         filter = {
             "is_handled": False,
             "published": False,
             "event_type": {"$in": [event_type.event_type for event_type in self.outbox_publisher.event_type_to_routing_key]}   
         }
+        
         await asyncio.sleep(self.outbox_publisher.initial_delay)
         while True: 
             try:
+                # Apply backpressure on queues under exchange
+                await self.backpressure_manager.apply_backpressure(self.backpressure_queue_name)
+                
                 events = await self.events_db.find_events_by_filter(filter, limit=self.outbox_publisher.batch_size)
                 if not events:
                     self.logger.info("No new events to publish.")
@@ -124,6 +130,12 @@ class BasePublisher(ABC):
                 
                 updated_count = await self.events_db.update_events_published(event_ids)
                 self.logger.info(f"Published and marked {updated_count} events as handled.")
+                
+                # Log backpressure statistics periodically
+                if updated_count > 0:
+                    stats = self.backpressure_manager.get_statistics()
+                    self.logger.info(f"Backpressure statistics: {stats}")
+                    
             except Exception as e:
                 self.logger.error(f"Error in publish_new_events_batch: {e}\n{traceback.format_exc()}") 
                 raise e

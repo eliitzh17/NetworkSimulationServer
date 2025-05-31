@@ -1,13 +1,21 @@
-from app.bus_messages.consumers.base_consumer import BaseConsumer
-from app.business_logic.topolgies_simulation_bl import TopologiesSimulationsBusinessLogic
+from app.amps.consumers.base_consumer import BaseConsumer
+from app.business_logic.topologies_simulation_bl import TopologiesSimulationsBusinessLogic
 from app.models.events_models import SimulationEvent
 import aio_pika
 import json
 from app.models.statuses_enums import EventType
+from app.app_container import app_container
+
 class SimulationConsumer(BaseConsumer):
-    def __init__(self, db, queue, logger_name, retry_queue=None, dead_letter_queue=None, max_retries=3, retry_delay=1):
-        super().__init__(db, queue, logger_name, retry_queue=retry_queue, dead_letter_queue=dead_letter_queue, max_retries=max_retries, retry_delay=retry_delay)
-        self.name = "simulations_consumer"
+    def __init__(self, db, 
+                 queue,
+                 dead_letter_queue=None):
+        super().__init__(db, queue, 
+                         dead_letter_queue=dead_letter_queue, 
+                         max_retries=app_container.config().MAX_RETRIES, 
+                         retry_delay=app_container.config().RETRY_DELAY,
+                         max_concurrent_tasks=app_container.config().SIMULATIONS_CONSUMER_MAX_CONCURRENT_TASKS,
+                         message_timeout=app_container.config().MESSAGE_TIMEOUT)
         self.simulation_manager = TopologiesSimulationsBusinessLogic(db)
 
     async def process_message(self, message: aio_pika.IncomingMessage):

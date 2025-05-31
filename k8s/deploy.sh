@@ -38,10 +38,10 @@ gcloud builds submit --tag gcr.io/$PROJECT_ID/publish-completed-worker:latest
 
 # Apply all YAML files
 echo "Deploying applications..."
-kubectl apply -f k8s/secret.yaml
-kubectl apply -f k8s/configmap.yaml
-kubectl apply -f k8s/deployment-app.yaml
-kubectl apply -f k8s/deployment-workers.yaml
+kubectl apply -f k8s/dev/secret.yaml
+kubectl apply -f k8s/dev/configmap.yaml
+kubectl apply -f k8s/dev/deployment-app.yaml
+kubectl apply -f k8s/dev/deployment-workers.yaml
 
 # Wait for deployments to be ready
 echo "Waiting for deployments to be ready..."

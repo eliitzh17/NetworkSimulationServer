@@ -71,7 +71,7 @@ class EventsDB:
             self.logger.error(f"Unexpected error while updating Event {event_id}: {str(e)}")
             raise ValidationError(f"Error processing Event data: {str(e)}") from e
 
-    async def find_events_by_filter(self, filter: dict, limit: int = 10) -> list[dict]:
+    async def find_events_by_filter(self, filter: dict, limit: int = app_container.config().PAGE_LIMIT) -> list[dict]:
         """
         Find events matching a filter, limited by 'limit'.
         Returns a list of BaseEvent objects.
@@ -112,7 +112,7 @@ class EventsDB:
             self.logger.error(f"Unexpected error while updating published Events: {str(e)}")
             raise ValidationError(f"Error processing published Events: {str(e)}") from e
 
-    async def update_events_handled(self, event_ids: list[str]) -> int:
+    async def update_events_handled(self, event_ids: list[str], session=None) -> int:
         """
         Set is_handled=True for all events with IDs in event_ids.
         Returns the number of updated documents.
@@ -126,7 +126,8 @@ class EventsDB:
             self.logger.debug(f"update_many update: {update_command}")
             result = await self.collection.update_many(
                 filter_query,
-                update_command
+                update_command,
+                session=session
             )
             if result.modified_count > 0:
                 self.logger.info(f"Marked {result.modified_count} events as handled. ✅")

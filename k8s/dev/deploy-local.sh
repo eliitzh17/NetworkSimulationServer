@@ -5,19 +5,26 @@ set -e
 IMAGE=network-simulation-server:latest
 docker build -t $IMAGE .
 
+# Save image to tar file
+docker save $IMAGE > network-simulation-server.tar
+
 # Load image into Minikube
 eval $(minikube docker-env)
-docker build -t $IMAGE .
+docker load < network-simulation-server.tar
+
+# Clean up tar file
+rm network-simulation-server.tar
 
 echo "Image loaded into Minikube."
 
 minikube start
 
 # Apply k8s manifests
-kubectl apply -f k8s/secret.yaml
-kubectl apply -f k8s/configmap.yaml
-kubectl apply -f k8s/deployment-app.yaml
-kubectl apply -f k8s/deployment-workers.yaml
+kubectl apply -f k8s/dev/secret.yaml
+kubectl apply -f k8s/dev/configmap.yaml
+kubectl apply -f k8s/dev/hpa.yaml
+kubectl apply -f k8s/dev/deployment-app.yaml
+kubectl apply -f k8s/dev/deployment-workers.yaml
 
 # Expose service (optional)
 echo "To access the app, run: minikube service network-simulation-server" 

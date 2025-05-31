@@ -5,13 +5,13 @@ from datetime import datetime, UTC
 from bson.objectid import ObjectId
 from app.models.topolgy_models import Topology
 from typing import List, Optional
-import os
 from pymongo.errors import PyMongoError
 from pymongo import UpdateOne
 from pymongo.errors import BulkWriteError
 from app.utils.object_utils import get_fingerprint
 from app.models.requests_models import SimulationRequest
 from app.app_container import app_container
+
 class TopologiesDB:
     """
     Repository for CRUD operations on Topologies documents in MongoDB.
@@ -56,11 +56,11 @@ class TopologiesDB:
             self.db_logger.warning(f"Topology with id {sim_id} not found")
             return None
         except PyMongoError as e:
-            self.db_logger.error(f"Database error while fetching Topolgies {sim_id}: {str(e)}")
-            raise DatabaseError(f"Failed to retrieve Topolgies: {str(e)}") from e
+            self.db_logger.error(f"Database error while fetching topologies {sim_id}: {str(e)}")
+            raise DatabaseError(f"Failed to retrieve topologies: {str(e)}") from e
         except Exception as e:
-            self.db_logger.error(f"Unexpected error while fetching Topolgies {sim_id}: {str(e)}")
-            raise ValidationError(f"Error processing Topolgies data: {str(e)}") from e
+            self.db_logger.error(f"Unexpected error while fetching topologies {sim_id}: {str(e)}")
+            raise ValidationError(f"Error processing topologies data: {str(e)}") from e
         
     async def get_exist_topology(self, simulation_request: SimulationRequest, session=None):
         """
@@ -137,8 +137,8 @@ class TopologiesDB:
                 total=total
             )
         except PyMongoError as e:
-            self.db_logger.error(f"Database error while cursor-paginating Topolgiess: {str(e)}")
-            raise DatabaseError(f"Failed to list Topolgiess: {str(e)}") from e
+            self.db_logger.error(f"Database error while cursor-paginating topologiess: {str(e)}")
+            raise DatabaseError(f"Failed to list topologiess: {str(e)}") from e
         except Exception as e:
-            self.db_logger.error(f"Unexpected error while cursor-paginating Topolgiess: {str(e)}")
-            raise ValidationError(f"Error processing Topolgies data: {str(e)}") from e
+            self.db_logger.error(f"Unexpected error while cursor-paginating topologiess: {str(e)}")
+            raise ValidationError(f"Error processing topologies data: {str(e)}") from e

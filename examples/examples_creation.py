@@ -1,5 +1,6 @@
 import json
 import random
+from pathlib import Path
 
 def generate_topology(topology_num, nodes_range, links_range, ensure_valid_nodes=True):
     """
@@ -123,6 +124,9 @@ def generate_multiple_topologies(count, nodes_range, links_range, ensure_valid_n
 def save_topologies_to_files():
     """Generate and save multiple topology sets to JSON files"""
     
+    # Get the examples directory path
+    examples_dir = Path(__file__).parent
+    
     # Generate small topologies
     print("Generating small topologies...")
     small_topologies = generate_multiple_topologies(
@@ -133,9 +137,10 @@ def save_topologies_to_files():
     )
     
     # Save small topologies
-    with open('generated_topologies_small.json', 'w') as f:
+    small_file = examples_dir / 'generated_topologies_small.json'
+    with open(small_file, 'w') as f:
         json.dump(small_topologies, f, indent=2)
-    print("✓ Saved: generated_topologies_small.json")
+    print(f"✓ Saved: {small_file}")
     
     # Generate medium topologies
     print("Generating medium topologies...")
@@ -147,9 +152,10 @@ def save_topologies_to_files():
     )
     
     # Save medium topologies
-    with open('generated_topologies_medium.json', 'w') as f:
+    medium_file = examples_dir / 'generated_topologies_medium.json'
+    with open(medium_file, 'w') as f:
         json.dump(medium_topologies, f, indent=2)
-    print("✓ Saved: generated_topologies_medium.json")
+    print(f"✓ Saved: {medium_file}")
     
     # Generate large topologies
     print("Generating large topologies...")
@@ -161,9 +167,10 @@ def save_topologies_to_files():
     )
     
     # Save large topologies
-    with open('generated_topologies_large.json', 'w') as f:
+    large_file = examples_dir / 'generated_topologies_large.json'
+    with open(large_file, 'w') as f:
         json.dump(large_topologies, f, indent=2)
-    print("✓ Saved: generated_topologies_large.json")
+    print(f"✓ Saved: {large_file}")
     
     # Generate mixed size topologies in one file
     print("Generating mixed topologies...")
@@ -181,9 +188,10 @@ def save_topologies_to_files():
         mixed_topologies.append(topo)
     
     # Save mixed topologies
-    with open('generated_topologies.json', 'w') as f:
+    mixed_file = examples_dir / 'generated_topologies.json'
+    with open(mixed_file, 'w') as f:
         json.dump(mixed_topologies, f, indent=2)
-    print("✓ Saved: generated_topologies.json")
+    print(f"✓ Saved: {mixed_file}")
     
     # Print statistics
     print("\n=== Generation Complete ===")

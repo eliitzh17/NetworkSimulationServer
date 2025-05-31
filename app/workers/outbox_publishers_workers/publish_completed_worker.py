@@ -1,8 +1,7 @@
-import os
 import asyncio
 from aio_pika import ExchangeType
-from app.bus_messages.rabbit_mq_manager import RabbitMQManager
-from app.bus_messages.publishers.simulation_completed_publisher import SimulationCompletedPublisher
+from app.amps.rabbit_mq_manager import RabbitMQManager
+from app.amps.publishers.simulation_completed_publisher import SimulationCompletedPublisher
 from app.workers.base_worker import run_outbox_publisher_worker
 from app.app_container import app_container
 from app.utils.logger import LoggerManager
@@ -21,16 +20,12 @@ def main():
         await mongo_manager.connect()
 
         # setup rabbitmq
-        exchange_configs = [
-            {"name": app_container.config().SIMULATION_EXCHANGE, "type": ExchangeType.DIRECT, "durable": True},
-        ]
-        rabbitmq_manager = RabbitMQManager(rabbitmq_client, exchange_configs)
-        await rabbitmq_manager.setup_exchanges()
+        rabbitmq_manager = RabbitMQManager(rabbitmq_client)
+        await rabbitmq_manager.setup_exchange(app_container.config().SIMULATION_EXCHANGE, ExchangeType.TOPIC, True)
         
         # run the worker
         await run_outbox_publisher_worker(
             SimulationCompletedPublisher,
-            "simulation_completed_publisher",
             publisher_args={"rabbitmq_manager": rabbitmq_manager, 
                             "exchange_name": app_container.config().SIMULATION_EXCHANGE, 
                             "db": mongo_manager.db}

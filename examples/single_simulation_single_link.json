@@ -1,0 +1,22 @@
+[
+    {
+        "topology": {
+            "nodes": [
+                "A",
+                "B"
+            ],
+            "links": [
+                {
+                    "from_node": "A",
+                    "to_node": "B",
+                    "latency": 2
+                }
+            ]
+        },
+        "config": {
+            "duration_sec": 60,
+            "packet_loss_percent": 0.1,
+            "log_level": "info"
+        }
+    }
+]

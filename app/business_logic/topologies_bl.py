@@ -1,9 +1,9 @@
-from app.db.toplogies_db import TopologiesDB
+from app.db.topologies_db import TopologiesDB
 from typing import List
 from app.business_logic.validators.topolgy_validators import TopologiesValidators
 from app.utils.logger import LoggerManager
 from app.models.topolgy_simulation_models import TopologySimulation, LinkExecutionState, LinkExecutionState
-from app.business_logic.topolgies_simulation_bl import TopologiesSimulationsBusinessLogic
+from app.business_logic.topologies_simulation_bl import TopologiesSimulationsBusinessLogic
 from app.models.requests_models import SimulationRequest
 from app.models.mapper import SimulationMapper
 from bson import ObjectId
@@ -15,7 +15,7 @@ class TopologiesBL:
         self.db = db
         self.topologies_db = TopologiesDB(db)
         self.topologies_simulations_bl = TopologiesSimulationsBusinessLogic(db)
-        self.topolgies_validators = TopologiesValidators()
+        self.topologies_validators = TopologiesValidators()
         
     async def trigger_simulation(self, simulations_requests: List[SimulationRequest], session=None):
         self.logger.info(f"Triggering simulation for {len(simulations_requests)} topologies")
@@ -52,7 +52,7 @@ class TopologiesBL:
     def _validate_and_enrich_new_topologies(self, new_requests: List[SimulationRequest]):
         new_topologies = []
         for simulation_request in new_requests:
-            if self.topolgies_validators.validate_topologies(simulation_request) is False:
+            if self.topologies_validators.validate_topologies(simulation_request) is False:
                 self.logger.error(f"Invalid topologies: {simulation_request.topology}")
                 continue
             new_topologies.append(SimulationMapper.enrich_topology(simulation_request))

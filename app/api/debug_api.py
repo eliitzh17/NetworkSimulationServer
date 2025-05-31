@@ -1,7 +1,7 @@
 # from app.models.requests_models import SimulationRequest
 # from app.models.mapper import SimulationMapper
 # from app.rabbit_mq.publishers.links_publisher import LinksPublisher
-# from app.core.topolgies_simulation_bl import TopologiesSimulationsBusinessLogic
+# from app.core.topologies_simulation_bl import TopologiesSimulationsBusinessLogic
 # from app.utils.logger import LoggerManager
 # from fastapi import APIRouter, Depends
 # from app.api.dependencies import get_mongo_manager, get_rabbitmq_client

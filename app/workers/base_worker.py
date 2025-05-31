@@ -1,7 +1,7 @@
 import asyncio
 from app.utils.logger import LoggerManager
 from app.app_container import app_container
-from app.bus_messages.publishers.base_publisher import BasePublisher
+from app.amps.publishers.base_publisher import BasePublisher
 async def run_consumer_worker(consumer_class, logger_name, consumer_args=None):
     """
     Worker runner for consumers.
@@ -28,15 +28,14 @@ async def run_consumer_worker(consumer_class, logger_name, consumer_args=None):
         await mongo_manager.close()
 
 
-async def run_outbox_publisher_worker(publisher_class: BasePublisher, logger_name: str, publisher_args=None):
+async def run_outbox_publisher_worker(publisher_class: BasePublisher, publisher_args=None):
     """
     Worker runner for outbox publishers.
     :param publisher_class: The class to instantiate (e.g., Publisher)
-    :param logger_name: Logger name for this worker
     :param publisher_args: Dict of extra args for the publisher constructor (besides db, logger).
     """
-    logger = LoggerManager.get_logger(logger_name)
-    logger.info(f"Starting {logger_name} outbox publisher worker")
+    logger = LoggerManager.get_logger(__name__)
+    logger.info(f"Starting outbox publisher worker")
 
     try:
         publisher_args = publisher_args or {}
@@ -44,10 +43,10 @@ async def run_outbox_publisher_worker(publisher_class: BasePublisher, logger_nam
         await publisher.run_outbox_publisher()
         await asyncio.Future()  # Keeps the worker alive
     except Exception as e:
-        logger.error(f"[!] Exception in {logger_name} outbox publisher worker: {e}", exc_info=True)
+        logger.error(f"[!] Exception in outbox publisher worker: {e}", exc_info=True)
         raise e
     finally:
-        logger.info(f"Closing {logger_name} outbox publisher worker")
+        logger.info(f"Closing outbox publisher worker")
 
 # Deprecated: use run_consumer_worker or run_outbox_publisher_worker instead
 # async def run_worker(consumer_class, logger_name, consumer_args=None):

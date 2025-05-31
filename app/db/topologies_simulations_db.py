@@ -12,6 +12,7 @@ from app.models.pageination_models import CursorPaginationRequest, CursorPaginat
 from pydantic import TypeAdapter
 from app.models.statuses_enums import TopologyStatusEnum, LinkStatusEnum
 from app.app_container import app_container
+
 class TopologiesSimulationsDB:
     """
     Repository for CRUD operations on TopologiesSimulation documents in MongoDB.
@@ -110,13 +111,14 @@ class TopologiesSimulationsDB:
     async def get_topologies_simulations_by_topology_id(self, topology_id: str, cursor_pagination_request: CursorPaginationRequest) -> CursorPaginationResponse[TopologySimulation]:
         return await self._cursor_paginate({"topology._id": topology_id}, cursor_pagination_request)
 
-    async def update_simulation(self, simulation_id: str, update_data: TopologySimulation, ignore_row_version: bool = False) -> int:
+    async def update_simulation(self, simulation_id: str, update_data: TopologySimulation, ignore_row_version: bool = False, session=None) -> int:
         """
         Update a single TopologySimulation by its sim_id using optimistic concurrency control (row_version).
         Args:
             simulation_id: The ID of the simulation to update.
             update_data: The TopologySimulation object with updated data.
             row_version: The expected current row_version for concurrency control.
+            session: MongoDB session for transaction support
         Returns:
             int: Number of successfully updated documents (1 if successful, 0 otherwise).
         Raises:
@@ -130,7 +132,8 @@ class TopologiesSimulationsDB:
         try:
             result = await self.collection.update_one(
                 {"_id": simulation_id, "row_version": current_row_version if not ignore_row_version else None},
-                {"$set": update_dict}
+                {"$set": update_dict},
+                session=session
             )
             if result.modified_count == 0:
                 self.db_logger.error(f"Row version mismatch or simulation {simulation_id} not found for update.")

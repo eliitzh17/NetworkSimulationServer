@@ -1,4 +1,4 @@
-from app.db.topolgies_simulations_db import TopologiesSimulationsDB
+from app.db.topologies_simulations_db import TopologiesSimulationsDB
 from app.utils.logger import LoggerManager
 from app.models.topolgy_simulation_models import TopologySimulation
 from typing import List

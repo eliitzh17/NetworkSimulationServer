@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: app
-        image: gcr.io/properties-observability/main-app:latest
+        image: network-simulation-server:latest
         imagePullPolicy: IfNotPresent
         envFrom:
         - configMapRef:

@@ -1,98 +1,19 @@
 import asyncio
 from aio_pika import ExchangeType
 from app.workers.consumer_workers.base_consumer_worker import BaseConsumerWorker
-from app.bus_messages.consumers.base_consumer import BaseConsumer
-from app.utils.logger import LoggerManager
-from app.bus_messages.consumers.simulations_consumer import SimulationConsumer
-from app.app_container import app_container
-from app.bus_messages.rabbit_mq_manager import RabbitMQManager
-from app.bus_messages.rabbit_mq_client import RabbitMQClient
+from app.amps.consumers.simulations_consumer import SimulationConsumer
 
-class MultiQueueConsumerWorker(BaseConsumerWorker):
-    LOGGER_NAME = "multi_queue_consumer"
-    EXCHANGE_ENV = "SIMULATION_EXCHANGE"
-    EXCHANGE_TYPE = ExchangeType.DIRECT
-    CONSUMER_CLASS = SimulationConsumer
 
-    # List of dicts, each dict configures a consumer for a queue
-    CONSUMER_CONFIGS = [
-         {
-            'queue_env': 'NEW_SIMULATIONS_QUEUE',
-            'max_retries': 3,
-            'retry_delay': 2
-        },
-        {
-            'queue_env': 'SIMULATIONS_UPDATE_QUEUE',
-            'max_retries': 3,
-            'retry_delay': 3
-        },
-        {
-            'queue_env': 'SIMULATIONS_PAUSED_QUEUE',
-            'max_retries': 3,
-            'retry_delay': 1
-        },
-        {
-            'queue_env': 'SIMULATIONS_RESUMED_QUEUE',
-            'max_retries': 3,
-            'retry_delay': 2
-        },
-        {
-            'queue_env': 'SIMULATIONS_STOPPED_QUEUE',
-            'max_retries': 3,
-            'retry_delay': 2
-        },
-        {
-            'queue_env': 'SIMULATIONS_COMPLETED_QUEUE',
-            'max_retries': 5,
-            'retry_delay': 5
-        }
-    ]
-
-    async def setup_and_run(self):
-        logger = LoggerManager.get_logger(self.LOGGER_NAME)
-        mongo_manager = app_container.mongo_manager()
-        await mongo_manager.connect()
-
-        # RabbitMQ URL
-        rabbitmq_client = RabbitMQClient(app_container.config().RABBITMQ_URL)
-
-        # Exchange name
-        exchange_configs = [
-            {"name": app_container.config().get(self.EXCHANGE_ENV), "type": self.EXCHANGE_TYPE, "durable": True},
-        ]
-        rabbitmq_manager = RabbitMQManager(rabbitmq_client, exchange_configs)
-        await rabbitmq_manager.setup_exchanges()
-
-        # Setup all consumers
-        tasks = []
-        for consumer_cfg in self.CONSUMER_CONFIGS:
-            queue_name = consumer_cfg['queue_env']
-            if queue_name is None:
-                logger.error(f"Queue {consumer_cfg['queue_env']} not found")
-                continue
-           
-            # Create channel and setup queues 
-            channel = await rabbitmq_manager.create_consumer_channel()
-            main_queue, retry_queue, dead_letter_queue = await rabbitmq_manager.setup_queue_with_retry(
-                queue_name=app_container.config().get(queue_name),
-                exchange_name=app_container.config().get(self.EXCHANGE_ENV),
-                channel=channel  # Pass the channel
-            )
-            consumer_kwargs = dict(
-                db=mongo_manager.db,
-                queue=main_queue,
-                logger_name=f"{self.LOGGER_NAME}_{queue_name}",
-                retry_queue=retry_queue,
-                dead_letter_queue=dead_letter_queue,
-                max_retries=consumer_cfg.get('max_retries', 3),
-                retry_delay=consumer_cfg.get('retry_delay', 1),
-            )
-            if self.EXTRA_CONSUMER_KWARGS:
-                consumer_kwargs.update(self.EXTRA_CONSUMER_KWARGS)
-            consumer = self.CONSUMER_CLASS(**consumer_kwargs)
-            tasks.append(asyncio.create_task(consumer.start_consuming()))
-        await asyncio.gather(*tasks)
-        await asyncio.Future()  # Keep the worker alive 
+class SimulationConsumerWorker(BaseConsumerWorker):
+    def __init__(self):
+        super().__init__(
+            logger="simulation_consumer",
+            exchange_key_name="SIMULATION_EXCHANGE",
+            exchange_type=ExchangeType.TOPIC,
+            queue_key_name="SIMULATION_QUEUE",
+            routing_key_pattern="simulation.*",
+            consumer_class=SimulationConsumer
+        )
         
 if __name__ == "__main__":
-    asyncio.run(MultiQueueConsumerWorker.main()) 
+    asyncio.run(SimulationConsumerWorker.main()) 

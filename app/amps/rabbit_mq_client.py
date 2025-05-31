@@ -22,7 +22,6 @@ class RabbitMQClient:
     
     async def get_channel(self):
         if self.channel is None:
-            self.logger.info("Getting channel")
             try:
                 self.channel = await self.connection.channel()
                 self.logger.info("Channel created")

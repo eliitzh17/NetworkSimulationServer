@@ -118,6 +118,8 @@ class LinksValidators:
         return True
     
     def get_not_processed_link(self, simulation: TopologySimulation, current_link: Link):
+        if simulation.links_execution_state is None or simulation.links_execution_state.not_processed_links is None:
+            return None
         not_processed_link = next((link for link in simulation.links_execution_state.not_processed_links 
             if link.link_id == current_link.id),
             None
@@ -171,6 +173,13 @@ class LinksValidators:
             return False
         self.logger.info(f"Packet loss percent validated for simulation {simulation.sim_id}: {current_packet_loss_percent}")
         return True
+    
+    def is_simulation_running(self, simulation: TopologySimulation):
+        if simulation.status != TopologyStatusEnum.running:
+            self.logger.warning(f"Simulation {simulation.sim_id} is not running")
+            return False
+        self.logger.info(f"Simulation {simulation.sim_id} is running")
+        return True
 
     def run_post_simulation_Validator(self, simulation: TopologySimulation):
         """
@@ -180,5 +189,6 @@ class LinksValidators:
             simulation (TopologySimulation): The simulation object.
         """
         packet_loss_valid = self.is_packet_loss_valid(simulation)
-        self.logger.info(f"Post-link validation {'passed' if packet_loss_valid else 'failed'} for simulation {simulation.sim_id}")
-        return packet_loss_valid
+        simulation_running = self.is_simulation_running(simulation)
+        self.logger.info(f"Post-link validation {'passed' if packet_loss_valid and simulation_running else 'failed'} for simulation {simulation.sim_id}")
+        return packet_loss_valid and simulation_running

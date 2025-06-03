@@ -31,6 +31,13 @@ class AppConfig:
     LINKS_COLLECTION: str = 'links'
     TOPOLOGIES_SIMULATIONS_COLLECTION: str = 'topologies_simulations'
     EVENTS_COLLECTION: str = 'events'
+    
+    # MongoDB Connection Pool settings
+    MONGODB_MAX_POOL_SIZE: int = 100
+    MONGODB_MIN_POOL_SIZE: int = 10
+    MONGODB_MAX_IDLE_TIME_MS: int = 30000
+    MONGODB_RETRY_WRITES: bool = True
+    MONGODB_RETRY_READS: bool = True
 
     # AMQP settings
     # Exchange names
@@ -39,13 +46,16 @@ class AppConfig:
 
     # Queue names
     SIMULATION_QUEUE: str = "simulation.queue"
+    RUN_LINKS_QUEUE: str = "links.run.queue"
+    
+    # Routing keys
     NEW_SIMULATIONS_QUEUE: str = "simulation.new.queue"
     SIMULATIONS_UPDATE_QUEUE: str = "simulation.update.queue"
     SIMULATIONS_PAUSED_QUEUE: str = "simulation.paused.queue"
     SIMULATIONS_RESUMED_QUEUE: str = "simulation.resume.queue"
     SIMULATIONS_STOPPED_QUEUE: str = "simulation.stop.queue"
     SIMULATIONS_COMPLETED_QUEUE: str = "simulation.completed.queue"
-    RUN_LINKS_QUEUE: str = "links.run.queue"
+    SIMULATIONS_RESTARTED_QUEUE: str = "simulation.restarted.queue"
 
     # Suffixes
     RETRY_SUFFIX: str = ".retry"

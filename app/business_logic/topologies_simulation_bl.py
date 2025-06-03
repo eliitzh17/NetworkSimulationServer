@@ -46,12 +46,13 @@ class TopologiesSimulationsBusinessLogic:
             self.logger.error(f"Error during creation of topology simulations: {str(e)}")
             raise
         
-    async def run_simulation(self, simulation_event: SimulationEvent):
+    async def run_simulation(self, simulation_event: SimulationEvent, session=None):
         """
         Run a specific topology simulation.
 
         Args:
-            simulation_id (str): The ID of the simulation to be run.
+            simulation_event: The simulation event to process
+            session: MongoDB session for transaction support
         """
         self.logger.info(f"Starting run of simulation with ID: {simulation_event.after.sim_id}")
         try:
@@ -60,88 +61,26 @@ class TopologiesSimulationsBusinessLogic:
                 return
                 
             #update simulation
-            simulation = await self.topologies_simulations_db.get_topology_simulation(simulation_event.after.sim_id)
+            simulation = await self.topologies_simulations_db.get_topology_simulation(simulation_event.after.sim_id, session=session)
+            if simulation.row_version != simulation_event.after.row_version:
+                self.logger.error(f"Simulation {simulation_event.after.sim_id} has been updated since the event was created")
+                raise Exception(f"Simulation {simulation_event.after.sim_id} has been updated since the event was created")
+            
             self.logger.set_level(simulation.topology.config.log_level)
             simulation_event.after.status = TopologyStatusEnum.running
             simulation_event.after.updated_at = datetime.now()
             simulation_event.after.simulation_time.start_time = datetime.now()
-            simulation_event.after.row_version = simulation.row_version
-            await self.topologies_simulations_db.update_simulation(simulation_event.after.sim_id, simulation_event.after)
+            await self.topologies_simulations_db.update_simulation(simulation_event.after.sim_id, simulation_event.after, session=session)
             
             #store links events
             events = SimulationMapper.simulation_to_links_event(simulation_event.after)
-            await self.events_db.store_events(events)
+            await self.events_db.store_events(events, session=session)
             
-            #update simulation event
-            await self.events_db.update_events_handled([simulation_event.event_id])
-            
+            await self.events_db.update_events_handled([simulation_event.event_id], session=session)
+
             self.logger.info(f"Successfully run {len(events)} links for simulation {simulation_event.after.sim_id}.")
         except Exception as e:
             self.logger.error(f"Error during run of {simulation_event.after.sim_id}simulation: {str(e)}")
-            raise e
-        
-    def check_if_pause_is_open(self, simulation: TopologySimulation):
-        return [pause for pause in simulation.simulation_time.pauses 
-                      if pause.start_time is not None and pause.end_time is None]
-        
-    async def pause_simulation(self, simulation_event: SimulationEvent):
-        """
-        Pause a specific topology simulation.
-
-        Args:
-            simulation_id (str): The ID of the simulation to be paused.
-        """ 
-        self.logger.info(f"Pausing simulation with ID: {simulation_event.after.sim_id}")
-        try:
-            if self.check_if_pause_is_open(simulation_event.after   ) is not None:
-                self.logger.warning(f"Simulation {simulation_event.after.sim_id} is already paused")
-                return
-            #update status
-            simulation_event.after.status = TopologyStatusEnum.paused
-            simulation_event.after.updated_at = datetime.now()
-            simulation_event.after.simulation_time.pauses.append(PauseTime(start_time=datetime.now()))
-            await self.topologies_simulations_db.update_simulation(simulation_event.after.sim_id, simulation_event.after)
-            
-            await self.events_db.update_events_handled([simulation_event.event_id])
-            self.logger.info(f"Successfully paused simulation {simulation_event.after.sim_id}.")
-        except Exception as e:
-            self.logger.error(f"Error during pause of {simulation_event.after.sim_id} simulation: {str(e)}")
-            raise e 
-    
-    def get_last_pause(self, simulation: TopologySimulation):
-        matching_pauses = self.check_if_pause_is_open(simulation)
-    
-        if matching_pauses is not None and len(matching_pauses) > 1:
-            self.logger.error(f"Found multiple unclosed pauses in simulation {simulation.sim_id}")
-            raise ValueError(f"Found {len(matching_pauses)} unclosed pauses in simulation {simulation.sim_id}")
-    
-        return matching_pauses[0] if matching_pauses else None
-    
-    async def resume_simulation(self, simulation_event: SimulationEvent):
-        """
-        Resume a specific topology simulation.
-
-        Args:
-            simulation_id (str): The ID of the simulation to be resumed.
-        """
-        self.logger.info(f"Resuming simulation with ID: {simulation_event.after.sim_id}")
-        try:
-            last_pause = self.get_last_pause(simulation_event.after)
-            if last_pause is None:
-                self.logger.info(f"No unclosed pause found for simulation {simulation_event.after.sim_id}")
-                return
-            
-            #update status
-            simulation_event.after.status = TopologyStatusEnum.running
-            simulation_event.after.updated_at = datetime.now()
-            last_pause.end_time = datetime.now()
-            last_pause.duration = last_pause.end_time - last_pause.start_time
-            
-            await self.topologies_simulations_db.update_simulation(simulation_event.after.sim_id, simulation_event.after)
-            await self.events_db.update_events_handled([simulation_event.event_id])
-            self.logger.info(f"Successfully resumed simulation {simulation_event.after.sim_id}.")
-        except Exception as e:
-            self.logger.error(f"Error during resume of {simulation_event.after.sim_id} simulation: {str(e)}")
             raise e
 
     async def find_completed_simulations(self, cursor_pagination_request: CursorPaginationRequest) -> List[TopologySimulation]:
@@ -171,7 +110,14 @@ class TopologiesSimulationsBusinessLogic:
         pause_time = self.calculate_pause_time(simulation)
         simulation.simulation_time.total_execution_time = int(total_time - pause_time)
         
-    async def update_simulation_completed_status(self, simulation_event: SimulationEvent):
+    async def update_simulation_completed_status(self, simulation_event: SimulationEvent, session=None):
+        """
+        Update the status of a completed simulation.
+
+        Args:
+            simulation_event: The simulation event to process
+            session: MongoDB session for transaction support
+        """
         try:
             if len(simulation_event.after.links_execution_state.failed_links) > 0:
                 if self.links_validator.is_packet_loss_valid(simulation_event.after):
@@ -182,10 +128,9 @@ class TopologiesSimulationsBusinessLogic:
                 simulation_event.after.status = TopologyStatusEnum.done
             
             await self.calculate_simulation_time(simulation_event.after)
-            await self.topologies_simulations_db.update_simulation(simulation_event.after.sim_id, simulation_event.after)
-            await self.events_db.update_events_handled([simulation_event.event_id])
+            await self.topologies_simulations_db.update_simulation(simulation_event.after.sim_id, simulation_event.after, session=session)
+            await self.events_db.update_events_handled([simulation_event.event_id], session=session)
             self.logger.info(f"Simulation {simulation_event.after.sim_id} completed at: {simulation_event.after.simulation_time.end_time}")
         except Exception as e:
             self.logger.error(f"Error during update of simulation {simulation_event.after.sim_id} completed status: {str(e)}")
             raise e
-            

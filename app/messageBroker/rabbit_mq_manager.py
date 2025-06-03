@@ -1,26 +1,27 @@
 from aio_pika import ExchangeType, Queue, Exchange, Channel
 from app.utils.logger import LoggerManager
-from app.amps.rabbit_mq_client import RabbitMQClient
+from app.messageBroker.rabbit_mq_client import RabbitMQClient
 from aiormq.exceptions import ChannelPreconditionFailed, ChannelInvalidStateError, AMQPChannelError
 from app.app_container import app_container
 import asyncio
+from typing import Optional
 
 class RabbitMQManager:
     def __init__(self, rabbit_mq_client: RabbitMQClient):
+        self.config = app_container.config()
         self.rabbit_mq_client = rabbit_mq_client
         self.exchanges = {}
-        self.channel = None
+        self.channel: Optional[Channel] = None
         self.logger = LoggerManager.get_logger('rabbit_mq_manager')
 
-    
     async def create_consumer_channel(self):
         """Create a new channel for a consumer, with prefetch_count set."""
         connection = await self.rabbit_mq_client.get_connection()
         channel = await connection.channel()
-        await channel.set_qos(prefetch_count=app_container.config().PREFETCH_COUNT)
-        return channel 
+        await channel.set_qos(prefetch_count=self.config.PREFETCH_COUNT)
+        return channel
 
-    async def _safe_declare_queue(self, channel: Channel, queue_name: str, durable: bool, arguments: dict, max_retries: int = 3 ) -> Queue:
+    async def _safe_declare_queue(self, channel: Channel, queue_name: str, durable: bool, arguments: dict, max_retries: int = 3 ) -> Optional[Queue]:
         for attempt in range(max_retries):
             try:
                 channel = await self._ensure_channel()
@@ -56,12 +57,12 @@ class RabbitMQManager:
                 self.logger.error(f"Failed to declare queue {queue_name} after {max_retries} attempts: {type(e).__name__}: {str(e)}")
                 raise
 
-    async def _ensure_channel(self):
+    async def _ensure_channel(self) ->Channel:
         """Ensure channel is open and valid, recreate if necessary"""
         if self.channel is None or self.channel.is_closed:
             connection = await self.rabbit_mq_client.get_connection()
             self.channel = await connection.channel()
-            await self.channel.set_qos(prefetch_count=app_container.config().PREFETCH_COUNT)
+            await self.channel.set_qos(prefetch_count=self.config.PREFETCH_COUNT)
         return self.channel
 
     async def _safe_declare_exchange(self, exchange_name: str, ex_type: ExchangeType, durable: bool, max_retries: int = 3) -> Exchange:
@@ -105,8 +106,8 @@ class RabbitMQManager:
         connection = await self.rabbit_mq_client.get_connection()
         self.channel = await connection.channel()
 
-        await self.channel.set_qos(prefetch_count=app_container.config().PREFETCH_COUNT)
-        dlx_exchange_name = f"{name}{app_container.config().DLX_SUFFIX}"
+        await self.channel.set_qos(prefetch_count=self.config.PREFETCH_COUNT)
+        dlx_exchange_name = f"{name}{self.config.DLX_SUFFIX}"
         exchange = await self._safe_declare_exchange(name, ex_type, durable)
         dlx_exchange = await self._safe_declare_exchange(dlx_exchange_name, ex_type, durable)
 
@@ -124,16 +125,16 @@ class RabbitMQManager:
         
         dlx_queue = await self._safe_declare_queue(
             channel,
-            f"{queue_name}{app_container.config().DLX_SUFFIX}",
+            f"{queue_name}{self.config.DLX_SUFFIX}",
             durable=True,
             arguments={
-                'x-message-ttl': app_container.config().DLX_TTL
+                'x-message-ttl': self.config.DLX_TTL
             }
         )
         
         await dlx_queue.bind(
-            self.exchanges[f"{exchange_name}{app_container.config().DLX_SUFFIX}"],
-            routing_key=f"{routing_key}{app_container.config().DLX_SUFFIX}"
+            self.exchanges[f"{exchange_name}{self.config.DLX_SUFFIX}"],
+            routing_key=f"{routing_key}{self.config.DLX_SUFFIX}"
         )
         
         return dlx_queue
@@ -151,9 +152,9 @@ class RabbitMQManager:
             queue_name,
             durable=True,
             arguments={
-                'x-dead-letter-exchange': f"{exchange_name}{app_container.config().DLX_SUFFIX}",
-                'x-dead-letter-routing-key': f"{queue_name}{app_container.config().DLX_SUFFIX}",
-                'x-message-ttl': app_container.config().QUEUE_TTL
+                'x-dead-letter-exchange': f"{exchange_name}{self.config.DLX_SUFFIX}",
+                'x-dead-letter-routing-key': f"{queue_name}{self.config.DLX_SUFFIX}",
+                'x-message-ttl': self.config.QUEUE_TTL
             }
         )
         

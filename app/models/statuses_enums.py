@@ -43,3 +43,4 @@ class EventType(str, Enum):
     SIMULATION_RESUMED = "simulation_resumed"
     SIMULATION_STOPPED = "simulation_stopped"
     SIMULATION_COMPLETED = "simulation_completed"
+    SIMULATION_RESTARTED = "simulation_restarted"

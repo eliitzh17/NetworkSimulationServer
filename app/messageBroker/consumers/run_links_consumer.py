@@ -1,4 +1,4 @@
-from app.amps.consumers.base_consumer import BaseConsumer
+from app.messageBroker.consumers.base_consumer import BaseConsumer
 from app.business_logic.link_bl import LinkBusinessLogic  
 from app.models.events_models import LinkEvent
 import aio_pika
@@ -9,12 +9,13 @@ class LinksConsumer(BaseConsumer):
     def __init__(self, db, 
                  queue,
                  dead_letter_queue=None):
+        self.config = app_container.config()
         super().__init__(db, queue, 
                          dead_letter_queue=dead_letter_queue, 
-                         max_retries=app_container.config().MAX_RETRIES, 
-                         retry_delay=app_container.config().RETRY_DELAY, 
-                         max_concurrent_tasks=app_container.config().LINKS_CONSUMER_MAX_CONCURRENT_TASKS,
-                         message_timeout=app_container.config().MESSAGE_TIMEOUT)
+                         max_retries=self.config.MAX_RETRIES, 
+                         retry_delay=self.config.RETRY_DELAY, 
+                         max_concurrent_tasks=self.config.LINKS_CONSUMER_MAX_CONCURRENT_TASKS,
+                         message_timeout=self.config.MESSAGE_TIMEOUT)
         self.link_bl = LinkBusinessLogic(db)
 
     async def process_message(self, message: aio_pika.IncomingMessage):

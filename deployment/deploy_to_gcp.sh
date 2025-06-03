@@ -62,9 +62,9 @@ docker push $APP_IMAGE
 WORKERS=( \
   "worker-consumer-simulations:app/workers/consumer_workers/consumer_simulations_worker.py" \
   "worker-consumer-links:app/workers/consumer_workers/consumer_links_worker.py" \
-  "worker-publish-simulations:app/workers/outbox_publishers_workers/publish_simulations_worker.py" \
-  "worker-publish-links:app/workers/outbox_publishers_workers/publish_links_worker.py" \
-  "worker-publish-completed:app/workers/outbox_publishers_workers/publish_completed_worker.py" \
+  "worker-publish-simulations:app/workers/outbox_producers_workers/publish_simulations_worker.py" \
+  "worker-publish-links:app/workers/outbox_producers_workers/publish_links_worker.py" \
+  "worker-publish-completed:app/workers/outbox_producers_workers/publish_completed_worker.py" \
 )
 
 for entry in "${WORKERS[@]}"; do

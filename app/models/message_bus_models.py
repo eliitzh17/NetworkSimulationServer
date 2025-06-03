@@ -8,10 +8,9 @@ class EventTypeToRoutingKey(BaseModel):
     routing_key: str
 
 class OutboxPublisher(BaseModel):
-    event_type_to_routing_key: List[EventTypeToRoutingKey]
     max_parallel: int
     initial_delay: int
     max_retries: int
     retry_delay: int
-    max_concurrent_publishes: int = 10
-    batch_size: int = 100
+    max_messages_to_publish: int
+    batch_size_events_query: int

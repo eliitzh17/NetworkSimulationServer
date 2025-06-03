@@ -72,15 +72,15 @@
               image_path: consumer-links-worker
             - name: publish-simulations-worker
               dockerfile: Dockerfile
-              build_args: '--build-arg WORKER_PATH=app/workers/outbox_publishers_workers/publish_simulations_worker.py'
+              build_args: '--build-arg WORKER_PATH=app/workers/outbox_producers_workers/publish_simulations_worker.py'
               image_path: publish-simulations-worker
             - name: publish-links-worker
               dockerfile: Dockerfile
-              build_args: '--build-arg WORKER_PATH=app/workers/outbox_publishers_workers/publish_links_worker.py'
+              build_args: '--build-arg WORKER_PATH=app/workers/outbox_producers_workers/publish_links_worker.py'
               image_path: publish-links-worker
             - name: publish-completed-worker
               dockerfile: Dockerfile
-              build_args: '--build-arg WORKER_PATH=app/workers/outbox_publishers_workers/publish_completed_worker.py'
+              build_args: '--build-arg WORKER_PATH=app/workers/outbox_producers_workers/publish_completed_worker.py'
               image_path: publish-completed-worker
       steps:
         - name: Checkout code

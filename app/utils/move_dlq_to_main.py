@@ -1,6 +1,6 @@
 import asyncio
-from app.amps.rabbit_mq_manager import RabbitMQManager
-from app.amps.rabbit_mq_client import RabbitMQClient
+from app.messageBroker.rabbit_mq_manager import RabbitMQManager
+from app.messageBroker.rabbit_mq_client import RabbitMQClient
 from app.config import get_config
 from aiormq.abc import ExchangeType
 

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Dict, Optional, List, Set
 from app.utils.logger import LoggerManager
-from app.amps.rabbit_mq_manager import RabbitMQManager
+from app.messageBroker.rabbit_mq_manager import RabbitMQManager
 
 @dataclass
 class QueueMetrics:
@@ -20,12 +20,12 @@ class BackpressureManager:
     def __init__(
         self,
         rabbitmq_manager: RabbitMQManager,
-        logger: LoggerManager,
         high_load_threshold: int = 500,
         medium_load_threshold: int = 250,
         base_delay: float = 2.0,
         max_delay: float = 30.0,
-        metrics_cache_ttl: float = 5.0
+        metrics_cache_ttl: float = 5.0,
+        consumer_queue_name: str = None
     ):
         """
         Initialize the backpressure manager.
@@ -40,7 +40,8 @@ class BackpressureManager:
             metrics_cache_ttl: Time-to-live for cached metrics in seconds
         """
         self.rabbitmq_manager = rabbitmq_manager
-        self.logger = logger
+        self.logger = LoggerManager.get_logger(self.__class__.__name__)
+        self.consumer_queue_name = consumer_queue_name
         self.queue_metrics: Dict[str, QueueMetrics] = {}
         self._metrics_lock = asyncio.Lock()
         
@@ -137,14 +138,14 @@ class BackpressureManager:
             
         return min(delay, self.MAX_DELAY)
 
-    async def apply_backpressure(self, queue_name: str) -> None:
+    async def apply_backpressure(self) -> None:
         """
         Apply backpressure by calculating and waiting for the appropriate delay.
         
         Args:
             queue_name: Name of the queue to monitor for backpressure
         """
-        delay = await self.calculate_delay(queue_name)
+        delay = await self.calculate_delay(self.consumer_queue_name)
         
         if delay > self.BASE_DELAY:
             self.logger.info(f"Applying backpressure delay: {delay:.1f}s")

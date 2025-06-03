@@ -53,6 +53,16 @@ async def get_mongo_manager(with_transaction: bool = False):
         if with_transaction and session:
             await _end_session(session)
 
+async def get_mongo_read_manager():
+    """
+    Dependency for read-only MongoDB operations.
+    Yields db only, no transaction support.
+    Usage:
+        db = Depends(get_mongo_read_manager)
+    """
+    mongo_manager = app_container.mongo_manager()
+    await _ensure_mongo_connected(mongo_manager)
+    yield mongo_manager.db
 
 async def get_rabbitmq_client():
     rabbitmq_client = app_container.rabbitmq_client()

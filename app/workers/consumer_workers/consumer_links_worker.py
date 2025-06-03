@@ -1,5 +1,5 @@
 from app.workers.consumer_workers.base_consumer_worker import BaseConsumerWorker
-from app.amps.consumers.run_links_consumer import LinksConsumer
+from app.messageBroker.consumers.run_links_consumer import LinksConsumer
 from aio_pika import ExchangeType
 import asyncio
 

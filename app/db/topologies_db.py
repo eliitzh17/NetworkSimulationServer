@@ -11,16 +11,18 @@ from pymongo.errors import BulkWriteError
 from app.utils.object_utils import get_fingerprint
 from app.models.requests_models import SimulationRequest
 from app.app_container import app_container
+from pymongo.collection import Collection
 
 class TopologiesDB:
     """
     Repository for CRUD operations on Topologies documents in MongoDB.
     Adds meta fields: _id, created_at, updated_at.
     """
-    db_logger = LoggerManager.get_logger('topologies_db')
-
     def __init__(self, db):
-        self.collection = db[app_container.config().TOPOLOGIES_COLLECTION]
+        self.config = app_container.config()
+        self.db = db
+        self.collection = db[self.config.TOPOLOGIES_COLLECTION]
+        self.logger = LoggerManager.get_logger('topologies_db')
 
     def _convert_doc_to_topology(self, doc):
         return Topology.model_validate({k: v for k, v in doc.items() if k != 'fingerprint'})
@@ -35,31 +37,31 @@ class TopologiesDB:
                 topology_dict["fingerprint"] = get_fingerprint(topology_dict)
                 docs.append(topology_dict)
             result = await self.collection.insert_many(docs, session=session)
-            self.db_logger.info(f"Created Topologies with ids {result.inserted_ids}")
+            self.logger.info(f"Created Topologies with ids {result.inserted_ids}")
 
             cursor = self.collection.find({"_id": {"$in": result.inserted_ids}}, session=session)
             docs = await cursor.to_list(length=len(result.inserted_ids))
             return [self._convert_doc_to_topology(doc) for doc in docs]
         except PyMongoError as e:
-            self.db_logger.error(f"Database error while creating Topologies: {str(e)}")
+            self.logger.error(f"Database error while creating Topologies: {str(e)}")
             raise DatabaseError(f"Failed to create Topologies: {str(e)}") from e
         except Exception as e:
-            self.db_logger.error(f"Unexpected error while creating Topologies: {str(e)}")
+            self.logger.error(f"Unexpected error while creating Topologies: {str(e)}")
             raise ValidationError(f"Failed to create Topologies: {str(e)}") from e
 
     async def get_topology(self, sim_id: str) -> Optional[Topology]:
         try:
             doc = await self.collection.find_one({"sim_id": sim_id})
             if doc:
-                self.db_logger.info(f"Fetched Topology with id {sim_id}")
+                self.logger.info(f"Fetched Topology with id {sim_id}")
                 return self._convert_doc_to_topology(doc)
-            self.db_logger.warning(f"Topology with id {sim_id} not found")
+            self.logger.warning(f"Topology with id {sim_id} not found")
             return None
         except PyMongoError as e:
-            self.db_logger.error(f"Database error while fetching topologies {sim_id}: {str(e)}")
+            self.logger.error(f"Database error while fetching topologies {sim_id}: {str(e)}")
             raise DatabaseError(f"Failed to retrieve topologies: {str(e)}") from e
         except Exception as e:
-            self.db_logger.error(f"Unexpected error while fetching topologies {sim_id}: {str(e)}")
+            self.logger.error(f"Unexpected error while fetching topologies {sim_id}: {str(e)}")
             raise ValidationError(f"Error processing topologies data: {str(e)}") from e
         
     async def get_exist_topology(self, simulation_request: SimulationRequest, session=None):
@@ -74,12 +76,12 @@ class TopologiesDB:
         try:
             cursor = await self.collection.find_one(query, session=session)
             if cursor:
-                self.db_logger.info(f"Topology found in DB (id={cursor.get('_id')})")
+                self.logger.info(f"Topology found in DB (id={cursor.get('_id')})")
                 return self._convert_doc_to_topology(cursor)
-            self.db_logger.info("Topology is new (no duplicate found in DB)")
+            self.logger.info("Topology is new (no duplicate found in DB)")
             return None
         except Exception as e:
-            self.db_logger.error(f"Error checking topology uniqueness: {e}")
+            self.logger.error(f"Error checking topology uniqueness: {e}")
             raise e
         
 
@@ -101,17 +103,17 @@ class TopologiesDB:
         try:
             if operations:
                 result = await self.collection.bulk_write(operations)
-                self.db_logger.info(f"Bulk updated {result.modified_count} Topologies")
+                self.logger.info(f"Bulk updated {result.modified_count} Topologies")
                 return result.modified_count
             return 0
         except BulkWriteError as e:
-            self.db_logger.error(f"Bulk write error: {str(e)}")
+            self.logger.error(f"Bulk write error: {str(e)}")
             raise DatabaseError(f"Bulk update failed: {str(e)}") from e
         except PyMongoError as e:
-            self.db_logger.error(f"Database error during bulk update: {str(e)}")
+            self.logger.error(f"Database error during bulk update: {str(e)}")
             raise DatabaseError(f"Bulk update failed: {str(e)}") from e
         except Exception as e:
-            self.db_logger.error(f"Unexpected error during bulk update: {str(e)}")
+            self.logger.error(f"Unexpected error during bulk update: {str(e)}")
             raise ValidationError(f"Bulk update failed: {str(e)}") from e 
 
     async def list_all_cursor(self, cursor_pagination_request: CursorPaginationRequest) -> CursorPaginationResponse:
@@ -137,8 +139,8 @@ class TopologiesDB:
                 total=total
             )
         except PyMongoError as e:
-            self.db_logger.error(f"Database error while cursor-paginating topologiess: {str(e)}")
+            self.logger.error(f"Database error while cursor-paginating topologiess: {str(e)}")
             raise DatabaseError(f"Failed to list topologiess: {str(e)}") from e
         except Exception as e:
-            self.db_logger.error(f"Unexpected error while cursor-paginating topologiess: {str(e)}")
+            self.logger.error(f"Unexpected error while cursor-paginating topologiess: {str(e)}")
             raise ValidationError(f"Error processing topologies data: {str(e)}") from e

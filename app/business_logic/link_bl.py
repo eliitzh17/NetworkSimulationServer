@@ -35,25 +35,25 @@ class LinkBusinessLogic:
                 self.logger.error(f"Simulation {link_event.sim_id} not found")
                 return
 
+            link_exec_state = self.validator_bl.get_not_processed_link(simulation, link_event.after)
+            link_exec_state.start_time = datetime.now()
+
             if self.validator_bl.run_pre_link_validator(simulation, link_event.after) is False:
                 self.logger.error(f"Link {link_event.after.id} failed pre-validation")
                 return
-            
-            link_exec_state = self.validator_bl.get_not_processed_link(simulation, link_event.after)
-            link_exec_state.start_time = datetime.now()
                         
             await asyncio.sleep(link_event.after.latency)
 
             simulation = await self.topologies_simulations_db.get_topology_simulation(link_event.sim_id)
             if self.validator_bl.run_post_simulation_Validator(simulation) is False:
                 self.logger.error(f"Link {link_event.after.id} failed post-validation")
+                await self.events_db.store_events([link_event])
                 return
 
             link_exec_state.status = LinkStatusEnum.done
         except Exception as e:
             self.logger.error(f"Error running link for simulation {link_event.sim_id}: {e}")
             link_exec_state = self.validator_bl.get_not_processed_link(simulation, link_event.after)
-            link_exec_state.retry_count += 1
             if is_last_retry:
                 link_exec_state.status = LinkStatusEnum.failed
             raise e

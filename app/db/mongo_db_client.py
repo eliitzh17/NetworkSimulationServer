@@ -15,13 +15,20 @@ class MongoDBConnectionManager:
         self.config = config
         self.uri = self.config.MONGODB_URI
         self.db_name = self.config.MONGODB_DB
-        self.client = None  
-        self.db = None
+        self.client: AsyncIOMotorClient = None
+        self.db: AsyncIOMotorClient = None
 
     async def connect(self):
         try:
             self.db_logger.info(f"Connecting to MongoDB at {self.uri}")
-            self.client = AsyncIOMotorClient(self.uri)
+            self.client = AsyncIOMotorClient(
+                self.uri,
+                maxPoolSize=self.config.MONGODB_MAX_POOL_SIZE,
+                minPoolSize=self.config.MONGODB_MIN_POOL_SIZE,
+                maxIdleTimeMS=self.config.MONGODB_MAX_IDLE_TIME_MS,
+                retryWrites=self.config.MONGODB_RETRY_WRITES,
+                retryReads=self.config.MONGODB_RETRY_READS
+            )
             self.db = self.client[self.db_name]
             # Ping the database to verify connection
             await self.client.admin.command('ping')
@@ -34,9 +41,14 @@ class MongoDBConnectionManager:
         try:
             # Ensure unique index on sim_id for simulations collection
             await self.db["events"].create_index(
-                [("_id", 1)], name="event_id_unique_idx"
+                [("_id", 1)], 
+                name="event_id_unique_idx"
             )
-            self.db_logger.info("Ensured index on 'event_id' for 'events' collection.")
+            await self.db["events"].create_index(
+                [("published", 1), ("created_at", 1)],
+                name="events_published_created_idx"
+            )
+            self.db_logger.info("Ensured indexes for 'events' collection.")
 
             await self.db["topologies"].create_index(
                 [("_id", 1)], name="topolgy_id_unique_idx"
@@ -46,7 +58,11 @@ class MongoDBConnectionManager:
             await self.db["topologies_simulations"].create_index(
                 [("_id", 1)], name="topolgy_simulation_id_unique_idx"
             )
-            self.db_logger.info("Ensured index on 'topolgy_simulation_id' for 'topologies_simulations' collection.")
+            await self.db["topologies_simulations"].create_index(
+                [("status", 1), ("updated_at", 1)],
+                name="simulations_status_updated_idx"
+            )
+            self.db_logger.info("Ensured indexes for 'topologies_simulations' collection.")
 
         except Exception as e:
             self.db_logger.error(f"Error ensuring indexes: {str(e)}")

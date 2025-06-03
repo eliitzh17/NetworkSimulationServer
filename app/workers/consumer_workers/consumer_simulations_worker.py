@@ -1,7 +1,7 @@
 import asyncio
 from aio_pika import ExchangeType
 from app.workers.consumer_workers.base_consumer_worker import BaseConsumerWorker
-from app.amps.consumers.simulations_consumer import SimulationConsumer
+from app.messageBroker.consumers.simulations_consumer import SimulationConsumer
 
 
 class SimulationConsumerWorker(BaseConsumerWorker):

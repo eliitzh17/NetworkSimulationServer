@@ -1,14 +1,16 @@
 import aio_pika
 from app.utils.logger import LoggerManager
+from aio_pika import Connection, Channel
+from typing import Optional
 
 class RabbitMQClient:
     def __init__(self, url: str):
-        self.connection = None
-        self.channel = None
+        self.connection: Optional[Connection] = None
+        self.channel: Optional[Channel] = None
         self.logger = LoggerManager.get_logger('rabbit_mq_client')
         self.url = url
 
-    async def get_connection(self):
+    async def get_connection(self) -> Optional[Connection]:
         if self.connection is None or self.connection.is_closed:
             self.logger.info(f"Connecting to RabbitMQ at {self.url}")
             try:

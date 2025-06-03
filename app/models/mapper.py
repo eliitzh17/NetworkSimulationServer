@@ -6,10 +6,12 @@ from app.models.events_models import LinkEvent
 from bson import ObjectId
 from app.models.topolgy_models import Topology, Config
 from app.business_logic.exceptions import MapperError
+from app.models.topolgy_simulation_models import LinkExecutionState
+from app.models.topolgy_models import Link
+
 class SimulationMapper:
     @staticmethod
     def enrich_topology(request: SimulationRequest) -> Topology:
-        
         try:
             request.topology.config = request.topology.config if request.topology.config else request.config if request.config else Config(30, 0.0, "warning")
             request.topology.id = str(ObjectId()) if request.topology.id is None else request.topology.id
@@ -51,3 +53,13 @@ class SimulationMapper:
             return events
         except Exception as e:
             raise MapperError(f"Failed to map simulation to links events: {str(e)}") from e
+
+
+    @staticmethod
+    def map_links_to_link_execution_state(links: List[Link]):
+        link_execution_states = []
+        for link in links:
+            link_execution_state = LinkExecutionState()
+            link_execution_state.link_id = link.id
+            link_execution_states.append(link_execution_state)
+        return link_execution_states

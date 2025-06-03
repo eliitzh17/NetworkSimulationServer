@@ -19,6 +19,8 @@ echo "Image loaded into Minikube."
 
 minikube start
 
+minikube addons enable metrics-server
+
 # Apply k8s manifests
 kubectl apply -f k8s/dev/secret.yaml
 kubectl apply -f k8s/dev/configmap.yaml

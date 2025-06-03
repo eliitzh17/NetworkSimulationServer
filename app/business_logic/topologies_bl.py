@@ -9,6 +9,8 @@ from app.models.mapper import SimulationMapper
 from bson import ObjectId
 import asyncio
 from app.models.topolgy_simulation_models import TopolgyLinksExecutionState
+from app.models.topolgy_models import Link
+
 class TopologiesBL:
     def __init__(self, db):
         self.logger = LoggerManager.get_logger('topologies_bl')
@@ -65,10 +67,7 @@ class TopologiesBL:
         simulations = []
         for topology in topologies:
             simulation = TopologySimulation(topology=topology)
-            for link in simulation.topology.links:
-                link_execution_state = LinkExecutionState()
-                link_execution_state.link_id = link.id
-                simulation.links_execution_state.not_processed_links.append(link_execution_state)
+            simulation.links_execution_state.not_processed_links = SimulationMapper.map_links_to_link_execution_state(simulation.topology.links)
             simulation.sim_id = str(ObjectId())
             simulations.append(simulation)
         return await self.topologies_simulations_bl.create_topologies_simulations(simulations, session=session)

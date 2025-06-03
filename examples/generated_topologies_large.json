@@ -10670,7 +10670,7 @@
     "config": {
       "duration_sec": 50,
       "packet_loss_percent": 4.14,
-      "log_level": "warn"
+      "log_level": "warning"
     }
   },
   {

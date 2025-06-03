@@ -1,10 +1,10 @@
 import asyncio
 from aio_pika import ExchangeType
-from app.amps.rabbit_mq_client import RabbitMQClient
-from app.amps.rabbit_mq_manager import RabbitMQManager
+from app.messageBroker.rabbit_mq_client import RabbitMQClient
+from app.messageBroker.rabbit_mq_manager import RabbitMQManager
 from app.utils.logger import LoggerManager
 from app.app_container import app_container
-from app.amps.consumers.base_consumer import BaseConsumer
+from app.messageBroker.consumers.base_consumer import BaseConsumer
 
 class BaseConsumerWorker:
     
@@ -14,6 +14,7 @@ class BaseConsumerWorker:
                  routing_key_pattern: str,
                  consumer_class: BaseConsumer):
         self.logger = LoggerManager.get_logger(logger)
+        self.config = app_container.config()
         self.exchange_key_name = exchange_key_name
         self.exchange_type = exchange_type
         self.queue_key_name = queue_key_name
@@ -33,18 +34,18 @@ class BaseConsumerWorker:
         await mongo_manager.connect()
 
         # RabbitMQ
-        rabbitmq_client = RabbitMQClient(app_container.config().RABBITMQ_URL)
+        rabbitmq_client = RabbitMQClient(self.config.RABBITMQ_URL)
         rabbitmq_manager = RabbitMQManager(rabbitmq_client)
 
         # Exchange name
-        exchange_name = app_container.config().get(self.exchange_key_name)
+        exchange_name = self.config.get(self.exchange_key_name)
         await rabbitmq_manager.setup_exchange(exchange_name, self.exchange_type, True)
 
         # Create a new channel for the consumer
         channel = await rabbitmq_manager.create_consumer_channel()
 
         # queues setup
-        queue_name = app_container.config().get(self.queue_key_name)
+        queue_name = self.config.get(self.queue_key_name)
         routing_key = self.routing_key_pattern if self.routing_key_pattern else queue_name
         dead_letter_queue = await rabbitmq_manager.setup_dlx_queue(channel, queue_name, exchange_name, routing_key)
         main_queue = await rabbitmq_manager.setup_queue(channel, queue_name, exchange_name, routing_key)

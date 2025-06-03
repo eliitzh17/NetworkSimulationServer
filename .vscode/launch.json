@@ -12,34 +12,42 @@
             "console": "integratedTerminal"
         },
         {
-            "name": "publish_simulations_worker",
+            "name": "app api",
             "type": "debugpy",
             "request": "launch",
-            "module": "app.workers.outbox_publishers_workers.publish_simulations_worker"
+            "module": "app.asgi"
         },
+        // Consumer workers
         {
-            "name": "publish_links_worker",
-            "type": "debugpy",
-            "request": "launch",
-            "module": "app.workers.outbox_publishers_workers.publish_links_worker"
-        },
-        {
-            "name": "simulations_worker consumer",
+            "name": "simulations_consumer_worker",
             "type": "debugpy",
             "request": "launch",
             "module": "app.workers.consumer_workers.consumer_simulations_worker"
         },
         {
-            "name": "links_worker consumer",
+            "name": "links_consumer_worker",
             "type": "debugpy",
             "request": "launch",
             "module": "app.workers.consumer_workers.consumer_links_worker"
         },
+        // Producer workers
         {
-            "name": "simulation_completed_worker",
+            "name": "simulations_producer_worker",
             "type": "debugpy",
             "request": "launch",
-            "module": "app.workers.outbox_publishers_workers.publish_completed_worker"
+            "module": "app.workers.outbox_producers_workers.simulations_producer_worker"
+        },
+        {
+            "name": "links_producer_worker",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "app.workers.outbox_producers_workers.links_producer_worker"
+        },
+        {
+            "name": "simulation_completed_producer_worker",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "app.workers.outbox_producers_workers.simulation_completed_producer_worker"
         }
     ]
 }

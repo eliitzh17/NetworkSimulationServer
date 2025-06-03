@@ -36,7 +36,7 @@ class TopolgyLinksExecutionState(BaseModel):
 class PauseTime(BaseModel):
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
-    duration: Optional[int] = None
+    duration: Optional[float] = None
     
 class SimulationTime(BaseModel):
     start_time: Optional[datetime] = None

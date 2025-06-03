@@ -55,23 +55,23 @@ class LoguruLogger(BasicLogger):
 
     def debug(self, message: str, **kwargs: Any) -> None:
         if self._should_log('DEBUG'):
-            logger.debug(f"{message}", **kwargs)
+            logger.debug(f"[{self.name}] {message}", **kwargs)
 
     def info(self, message: str, **kwargs: Any) -> None:
         if self._should_log('INFO'):
-            logger.info(f"{message}", **kwargs)
+            logger.info(f"[{self.name}] {message}", **kwargs)
 
     def warning(self, message: str, **kwargs: Any) -> None:
         if self._should_log('WARNING'):
-            logger.warning(f"{message}", **kwargs)
+            logger.warning(f"[{self.name}] {message}", **kwargs)
 
     def error(self, message: str, **kwargs: Any) -> None:
         if self._should_log('ERROR'):
-            logger.error(f"{message}", **kwargs)
+            logger.error(f"[{self.name}] {message}", **kwargs)
 
     def critical(self, message: str, **kwargs: Any) -> None:
         if self._should_log('CRITICAL'):
-            logger.critical(f"{message}", **kwargs)
+            logger.critical(f"[{self.name}] {message}", **kwargs)
 
 class LoggerManager:
     """

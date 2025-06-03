@@ -92,7 +92,7 @@ spec:
       - name: worker-publish-simulations
         image: gcr.io/$GCP_PROJECT/publish-simulations-worker:latest
         imagePullPolicy: IfNotPresent
-        command: ["python", "app/workers/outbox_publishers_workers/publish_simulations_worker.py"]
+        command: ["python", "app/workers/outbox_producers_workers/publish_simulations_worker.py"]
         envFrom:
         - configMapRef:
             name: network-config
@@ -128,7 +128,7 @@ spec:
       - name: worker-publish-links
         image: gcr.io/$GCP_PROJECT/publish-links-worker:latest
         imagePullPolicy: IfNotPresent
-        command: ["python", "app/workers/outbox_publishers_workers/publish_links_worker.py"]
+        command: ["python", "app/workers/outbox_producers_workers/publish_links_worker.py"]
         envFrom:
         - configMapRef:
             name: network-config
@@ -164,7 +164,7 @@ spec:
       - name: worker-publish-completed
         image: gcr.io/$GCP_PROJECT/publish-completed-worker:latest
         imagePullPolicy: IfNotPresent
-        command: ["python", "app/workers/outbox_publishers_workers/publish_completed_worker.py"]
+        command: ["python", "app/workers/outbox_producers_workers/publish_completed_worker.py"]
         envFrom:
         - configMapRef:
             name: network-config

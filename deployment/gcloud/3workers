@@ -56,7 +56,7 @@
   --min-instances 1 \
   --max-instances 5 \
   --command="python" \
-  --args="app/workers/outbox_publishers_workers/publish_completed_worker.py" \
+  --args="app/workers/outbox_producers_workers/publish_completed_worker.py" \
   --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
   --allow-unauthenticated
 
@@ -69,7 +69,7 @@
   --min-instances 1 \
   --max-instances 5 \
   --command="python" \
-  --args="app/workers/outbox_publishers_workers/publish_simulations_worker.py" \
+  --args="app/workers/outbox_producers_workers/publish_simulations_worker.py" \
   --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
 
   gcloud run deploy publish-links-worker \
@@ -81,7 +81,7 @@
   --min-instances 1 \
   --max-instances 5 \
   --command="python" \
-  --args="app/workers/outbox_publishers_workers/publish_links_worker.py" \
+  --args="app/workers/outbox_producers_workers/publish_links_worker.py" \
   --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
   --allow-unauthenticated
 
@@ -98,4 +98,4 @@
   --max-instances 1 \
   --set-env-vars=PYTHONPATH="/app",MONGODB_URI="mongodb+srv://eliitzh17:AX3lGegN341ozKF2@cluster0.qp71kbn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0",MONGODB_DB="network_sim_db",RABBITMQ_URL="amqps://zzwmeqgv:CBqAUi7xOh0u8hj8mt9IDmpcQrJofi1H@horse.lmq.cloudamqp.com/zzwmeqgv" \
   --command="python" \
-  --args="app/workers/outbox_publishers_workers/publish_simulations_worker.py"
+  --args="app/workers/outbox_producers_workers/publish_simulations_worker.py"

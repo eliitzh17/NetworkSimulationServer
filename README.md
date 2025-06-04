@@ -52,36 +52,59 @@ Simulate multiple network topologies concurrently, with full lifecycle managemen
 Below is a detailed visualization of the end-to-end process, including retries, DLQ, and monitoring:
 
 ```mermaid
-flowchart TD
-    User[User / Client]
-    API[FastAPI API Server]
-    Mongo[MongoDB]
-    Outbox[Outbox Events]
-    Producer[Producer Worker]
-    MQ[RabbitMQ Exchange/Queue]
-    Consumer[Consumer Worker]
-    Monitor[Monitoring/Logger]
-    DLQ[Dead Letter Queue]
-    Retry[Retry & Backoff]
-    Done[Mark as Handled]
+flowchart RL
+    %% Nodes
+    user([User])
+    fastapi([FastAPI Server])
+    simtopdb[(Simulation/Topology DB)]
+    eventsdb[(Events DB)]
+    producer{{Producer Worker}} 
+    consumer{{Consumer Worker}}
+    rabbitmq{{RabbitMQ}}
+    dlq[[DLQ]]
 
-    User -- POST /api/v1/simulate --> API
-    API -- Validate & Store Event --> Mongo
-    API -- Write Event to Outbox --> Outbox
-    Producer -- Fetch Unpublished Events --> Outbox
-    Producer -- Publish Event --> MQ
-    MQ -- Deliver Task --> Consumer
-    Consumer -- Process Message --> Mongo
-    Consumer -- Update State --> Mongo
-    Consumer -- May Publish New Events --> Outbox
-    Consumer -- Success --> Done
-    Consumer -- Failure --> Retry
-    Retry -- Retry/Backoff --> Consumer
-    Retry -- Max Retries --> DLQ
-    DLQ -- Alert/Inspect --> Monitor
-    Consumer -- Log/Monitor --> Monitor
-    Producer -- Log/Monitor --> Monitor
-    API -- Log/Monitor --> Monitor
+    %% Flows
+    user --> fastapi
+    fastapi --> simtopdb
+    fastapi --> eventsdb
+    producer --> eventsdb
+    producer -- "publish" --> rabbitmq
+    rabbitmq -- "consume" --> consumer
+    consumer --> simtopdb
+    consumer --> eventsdb
+    consumer -- "on failure" --> dlq
+
+    %% Groupings
+    subgraph API_Layer["API Layer"]
+        fastapi
+    end
+    subgraph Database_Layer["Database Layer"]
+        simtopdb
+        eventsdb
+    end
+    subgraph Message_Broker_Layer["Message Broker"]
+        rabbitmq
+        dlq
+    end
+    subgraph Workers_Layer["Workers"]
+        direction LR
+        producer
+        consumer
+    end
+
+    %% Classes for color and shape
+    classDef api fill:#4F8EF7,color:#fff,stroke:#2C5AA0,stroke-width:2px,rx:15,ry:15;
+    classDef db fill:#43C59E,color:#fff,stroke:#2E7D5A,stroke-width:2px;
+    classDef broker fill:#FFB86B,color:#fff,stroke:#FF8800,stroke-width:2px,stroke-dasharray: 5 5;
+    classDef worker fill:#B388FF,color:#fff,stroke:#6C3EFF,stroke-width:2px,stroke-dasharray: 2 4;
+    classDef dlq fill:#FF6B6B,color:#fff,stroke:#B22222,stroke-width:2px,stroke-dasharray: 3 3;
+
+    %% Assign classes and shapes
+    class fastapi api;
+    class simtopdb,eventsdb db;
+    class rabbitmq broker;
+    class producer,consumer worker;
+    class dlq dlq;
 ```
 
 **Key Details:**
@@ -91,6 +114,12 @@ flowchart TD
 - **Retries & Backoff:** Consumers retry failed tasks with exponential backoff; after max retries, messages go to the DLQ.
 - **DLQ:** Dead Letter Queue for failed messages, with monitoring and alerting.
 - **Monitoring:** Centralized logging and error tracking at every stage.
+
+---
+
+**Outbox Events Table Logic:**
+- **Producer Worker**: Searches for events with `published=false`, publishes them to RabbitMQ, then updates the event to `published=true`.
+- **Consumer Worker**: After handling a message, updates the event to `is_handled=true` and updates the relevant database tables.
 
 ---
 

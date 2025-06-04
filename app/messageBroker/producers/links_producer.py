@@ -17,12 +17,11 @@ class LinksProducer(BaseProducer):
     def _initialize_outbox_publisher(self):
         """Initialize the outbox publisher with link-specific configuration."""
         self.outbox_publisher = OutboxPublisher(
-            max_parallel=self.config.MAX_LINKS_IN_PARALLEL_PUBLISHER,
             initial_delay=self.config.INITIAL_DELAY,
             max_retries=self.config.MAX_RETRIES,
             retry_delay=self.config.RETRY_DELAY,
-            batch_size_events_query=50,
-            max_messages_to_publish=self.config.MAX_LINKS_IN_PARALLEL_PUBLISHER
+            batch_size_events_query=self.config.PAGE_SIZE,
+            max_messages_to_publish=self.config.MAX_LINKS_IN_PARALLEL_PRODUCER
         )
 
     def _get_event_filter(self) -> dict:

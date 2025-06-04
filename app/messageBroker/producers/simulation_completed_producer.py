@@ -18,24 +18,18 @@ class SimulationCompletedProducer(BaseProducer):
         super().__init__(rabbitmq_manager, exchange_name, db, app_container.config().SIMULATION_QUEUE)
         self.topologies_simulations_bl = TopologiesSimulationsBusinessLogic(db)
         self.db = db
-        self.topologies_simulations_db = TopologiesSimulationsDB(db)
-        self._initialize_config()
+        self.topologies_simulations_db = TopologiesSimulationsDB(db)    
+        self.config = app_container.config()
         self._initialize_outbox_publisher()
-
-    def _initialize_config(self):
-        """Initialize producer configuration."""
-        self.retry_delay = 10  # seconds
-        self.page_size = 500
 
     def _initialize_outbox_publisher(self):
         """Initialize the outbox publisher with simulation completion specific configuration."""
         self.outbox_publisher = OutboxPublisher(
-            max_parallel=1,  # Process one at a time to avoid overwhelming the system
-            initial_delay=self.retry_delay,
-            max_retries=3,
-            retry_delay=self.retry_delay,
-            batch_size_events_query=self.page_size,
-            max_messages_to_publish=1
+            initial_delay=self.config.INITIAL_DELAY,
+            max_retries=self.config.MAX_RETRIES,
+            retry_delay=self.config.RETRY_DELAY,
+            batch_size_events_query=self.config.PAGE_SIZE,
+            max_messages_to_publish=self.config.MAX_SIMULATIONS_IN_PARALLEL_COMPLETED_PRODUCER
         )
 
     def _get_event_filter(self) -> dict:
@@ -49,7 +43,7 @@ class SimulationCompletedProducer(BaseProducer):
     async def _get_completed_simulations(self) -> List[TopologySimulation]:
         """Fetch completed simulations from the database."""
         return await self.topologies_simulations_bl.find_completed_simulations(
-            CursorPaginationRequest(page=1, page_size=self.page_size)
+            CursorPaginationRequest(page=1, page_size=self.outbox_publisher.batch_size_events_query)
         )
 
     async def _get_existing_completed_sim_ids(self, sim_ids: List[str]) -> Set[str]:

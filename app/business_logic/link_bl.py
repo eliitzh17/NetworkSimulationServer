@@ -45,6 +45,7 @@ class LinkBusinessLogic:
         if is_last_retry:
             self.logger.info(f"Running link {current_event.after.id} for simulation {current_event.sim_id} (last retry)")
         
+        error = ''
         completed_link = copy.deepcopy(current_event.after)
         try:
 
@@ -74,10 +75,12 @@ class LinkBusinessLogic:
         except ValueError as e:
             self.logger.error(f"Error running link validations {current_event.event_id} event: {e}")
             completed_link.execution_state.status = LinkStatusEnum.failed
+            error = str(e)
             raise e
         except Exception as e:
             self.logger.error(f"Error running link {current_event.after.id} for simulation {current_event.sim_id}: {e}")
             completed_link.execution_state.status = LinkStatusEnum.failed
+            error = str(e)
             raise e
         finally:
             if completed_link.execution_state.status == LinkStatusEnum.done or (completed_link.execution_state.status == LinkStatusEnum.failed and is_last_retry):
@@ -85,4 +88,4 @@ class LinkBusinessLogic:
                 current_event.is_handled = True
                 await self._link_completed_db_updates(current_event, completed_link)
             else:
-                raise Exception(f"Link {current_event.after.id} failed to process")
+                raise Exception(f"Link {current_event.after.id} failed to process: {error}")

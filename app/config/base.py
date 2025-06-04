@@ -61,16 +61,18 @@ class AppConfig:
     RETRY_SUFFIX: str = ".retry"
     DLX_SUFFIX: str = ".dlx"
 
-    # Simulations
-    MAX_SIMULATIONS_IN_PARALLEL_PUBLISHER: int = 10
+    # Consumers
     SIMULATIONS_CONSUMER_MAX_CONCURRENT_TASKS: int = 10
+    LINKS_CONSUMER_MAX_CONCURRENT_TASKS: int = 500
 
-    # Links
-    MAX_LINKS_IN_PARALLEL_PUBLISHER: int = 50
-    LINKS_CONSUMER_MAX_CONCURRENT_TASKS: int = 50
+    # Producers
+    PAGE_SIZE: int = 200
+    MAX_SIMULATIONS_IN_PARALLEL_PRODUCER: int = 10
+    MAX_LINKS_IN_PARALLEL_PRODUCER: int = 500
+    MAX_SIMULATIONS_IN_PARALLEL_COMPLETED_PRODUCER: int = 10
 
     # Consumers
-    PREFETCH_COUNT: int = 50
+    PREFETCH_COUNT: int = 100
 
     # Retry settings
     QUEUE_TTL: int = 600000

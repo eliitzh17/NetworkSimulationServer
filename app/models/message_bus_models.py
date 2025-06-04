@@ -8,7 +8,6 @@ class EventTypeToRoutingKey(BaseModel):
     routing_key: str
 
 class OutboxPublisher(BaseModel):
-    max_parallel: int
     initial_delay: int
     max_retries: int
     retry_delay: int

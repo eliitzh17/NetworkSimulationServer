@@ -15,14 +15,14 @@ simulation_creator_router = APIRouter()
 
 logger.info("simulation_creator_api router initialized")
 
-def get_db_with_transaction():
+def _get_db_with_transaction():
     return partial(get_mongo_manager, with_transaction=True)
 
 @simulation_creator_router.post("/simulate", summary="Create a new simulation/s", tags=["Simulation"])
 @handle_api_exceptions
 async def create_simulation(
     requests: List[SimulationRequest],
-    db_session: Annotated[Tuple[AsyncIOMotorDatabase, ClientSession], Depends(get_db_with_transaction())]
+    db_session: Annotated[Tuple[AsyncIOMotorDatabase, ClientSession], Depends(_get_db_with_transaction())]
 ) -> List[str]:
     db, session = db_session
     topologies_bl = TopologiesBL(db)

@@ -106,7 +106,7 @@ spec:
       - name: worker-publish-simulations
         image: network-simulation-server:latest
         imagePullPolicy: IfNotPresent
-        command: ["python", "app/workers/outbox_producers_workers/publish_simulations_worker.py"]
+        command: ["python", "app/workers/outbox_producers_workers/simulations_producer_worker.py"]
         envFrom:
         - configMapRef:
             name: network-config
@@ -151,7 +151,7 @@ spec:
       - name: worker-publish-links
         image: network-simulation-server:latest
         imagePullPolicy: IfNotPresent
-        command: ["python", "app/workers/outbox_producers_workers/publish_links_worker.py"]
+        command: ["python", "app/workers/outbox_producers_workers/links_producer_worker.py"]
         envFrom:
         - configMapRef:
             name: network-config
@@ -196,7 +196,7 @@ spec:
       - name: worker-publish-completed
         image: network-simulation-server:latest
         imagePullPolicy: IfNotPresent
-        command: ["python", "app/workers/outbox_producers_workers/publish_completed_worker.py"]
+        command: ["python", "app/workers/outbox_producers_workers/simulation_completed_producer_worker.py"]
         envFrom:
         - configMapRef:
             name: network-config

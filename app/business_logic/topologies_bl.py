@@ -2,14 +2,14 @@ from app.db.topologies_db import TopologiesDB
 from typing import List
 from app.business_logic.validators.topolgy_validators import TopologiesValidators
 from app.utils.logger import LoggerManager
-from app.models.topolgy_simulation_models import TopologySimulation, LinkExecutionState, LinkExecutionState
+from app.models.topolgy_simulation_models import TopologySimulation
 from app.business_logic.topologies_simulation_bl import TopologiesSimulationsBusinessLogic
 from app.models.requests_models import SimulationRequest
 from app.models.mapper import SimulationMapper
 from bson import ObjectId
 import asyncio
-from app.models.topolgy_simulation_models import TopolgyLinksExecutionState
-from app.models.topolgy_models import Link
+from app.business_logic.exceptions import TopologiesBLException
+from copy import deepcopy
 
 class TopologiesBL:
     def __init__(self, db):
@@ -20,23 +20,28 @@ class TopologiesBL:
         self.topologies_validators = TopologiesValidators()
         
     async def trigger_simulation(self, simulations_requests: List[SimulationRequest], session=None):
-        self.logger.info(f"Triggering simulation for {len(simulations_requests)} topologies")
-        if not simulations_requests:
-            self.logger.error("No suitable topologies to simulate")
-            return []
+        try:
+            self.logger.info(f"Triggering simulation for {len(simulations_requests)} topologies")
+            if not simulations_requests:
+                self.logger.error("No suitable topologies to simulate")
+                return []
 
-        exist_topologies, new_requests = await self._split_requests_to_existing_and_new(simulations_requests, session)
-        new_topologies = self._validate_and_enrich_new_topologies(new_requests)
-        if not new_topologies and not exist_topologies:
-            self.logger.error("No suitable topologies to simulate")
-            return []
+            exist_topologies, new_requests = await self._split_requests_to_existing_and_new(simulations_requests, session)
+            new_topologies = self._validate_and_enrich_new_topologies(new_requests)
+            if not new_topologies and not exist_topologies:
+                self.logger.error("No suitable topologies to simulate")
+                return []
 
-        if new_topologies:
-            exist_topologies.extend(await self._store_new_topologies(new_topologies, session))
+            if new_topologies:
+                await self.topologies_db.store_topologies(new_topologies, session=session)
+                exist_topologies.extend(new_topologies)
 
-        sim_ids = await self._create_simulations(exist_topologies, session)
-        self.logger.info(f"Successfully triggered simulation for {len(exist_topologies)} topologies")
-        return sim_ids
+            sim_ids = await self._create_simulations(exist_topologies, session)
+            self.logger.info(f"Successfully triggered simulation for {len(exist_topologies)} topologies")
+            return sim_ids
+        except Exception as e:
+            self.logger.error(f"Error triggering simulation: {e}")
+            raise TopologiesBLException(f"Error triggering simulation: {e}") from e
 
     async def _split_requests_to_existing_and_new(self, simulations_requests: List[SimulationRequest], session=None):
         exist_topologies = []
@@ -60,14 +65,11 @@ class TopologiesBL:
             new_topologies.append(SimulationMapper.enrich_topology(simulation_request))
         return new_topologies
 
-    async def _store_new_topologies(self, new_topologies, session=None):
-        return await self.topologies_db.store_topologies(new_topologies, session=session)
-
     async def _create_simulations(self, topologies, session=None):
         simulations = []
         for topology in topologies:
             simulation = TopologySimulation(topology=topology)
-            simulation.links_execution_state.not_processed_links = SimulationMapper.map_links_to_link_execution_state(simulation.topology.links)
+            simulation.links_execution_state.not_processed_links = deepcopy(simulation.topology.links)
             simulation.sim_id = str(ObjectId())
             simulations.append(simulation)
         return await self.topologies_simulations_bl.create_topologies_simulations(simulations, session=session)

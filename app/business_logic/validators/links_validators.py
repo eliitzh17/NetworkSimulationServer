@@ -8,6 +8,8 @@ from app.models.topolgy_models import Link
 from app.models.statuses_enums import TopologyStatusEnum
 from app.models.topolgy_simulation_models import TopologySimulation
 from app.utils.logger import LoggerManager
+from app.models.statuses_enums import LinkStatusEnum
+
 class LinksValidators:
     """
     Provides validation methods for network links in a simulation topology.
@@ -121,14 +123,14 @@ class LinksValidators:
         if simulation.links_execution_state is None or simulation.links_execution_state.not_processed_links is None:
             return None
         not_processed_link = next((link for link in simulation.links_execution_state.not_processed_links 
-            if link.link_id == current_link.id),
+            if link.id == current_link.id),
             None
         )
         return not_processed_link
     
     def get_link(self, simulation: TopologySimulation, current_link: Link):
         processed_link = next((link for link in simulation.topology.links 
-            if link.link_id == current_link.id),
+            if link.id == current_link.id),
             None
         )
         return processed_link
@@ -152,6 +154,9 @@ class LinksValidators:
         self.logger.info(f"Pre-link validation {'passed' if result else 'failed'} for link {link.id} in simulation {simulation.sim_id}")
         return result
 
+    def count_failed_links(self, simulation: TopologySimulation):
+        return len([link for link in simulation.links_execution_state.processed_links if link.execution_state.status == LinkStatusEnum.failed])
+
     def is_packet_loss_valid(self, simulation: TopologySimulation):
         """
         Validate that the current packet loss percent does not exceed the configured threshold.
@@ -161,7 +166,7 @@ class LinksValidators:
         Returns:
             bool: True if packet loss percent is within the threshold, False otherwise (logs a warning).
         """
-        failed_links_count = len(simulation.links_execution_state.failed_links)
+        failed_links_count = self.count_failed_links(simulation)
         processed_links_count = len(simulation.links_execution_state.processed_links)
         
         if failed_links_count == 0 or processed_links_count == 0:

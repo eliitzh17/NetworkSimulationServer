@@ -4,34 +4,29 @@ from app.models.topolgy_models import Topology
 from app.models.statuses_enums import TopologyStatusEnum
 from typing import List
 from datetime import datetime
-from app.models.statuses_enums import LinkStatusEnum
+from app.models.topolgy_models import Link
 
-class LinkExecutionState(BaseModel):    
-    link_id: str = Field(None, alias="_id")
-    start_time: Optional[datetime] = None
-    end_time: Optional[datetime] = None
-    retry_count: int = 0
-    status: Optional[LinkStatusEnum] = LinkStatusEnum.pending
+
 
 class TopolgyLinksExecutionState(BaseModel):
-    not_processed_links: List[LinkExecutionState] = []
-    processed_links: List[LinkExecutionState] = []
-    failed_links: List[LinkExecutionState] = []
-    success_links: List[LinkExecutionState] = []
+    not_processed_links: List[Link] = []
+    processed_links: List[Link] = []
     
-    def add_link_state_to_success(self, link_state: LinkExecutionState):
-        link = next((l for l in self.not_processed_links if l.link_id == link_state.link_id), None)
-        if link:
-            self.not_processed_links.remove(link)
-            self.processed_links.append(link_state)
-            self.success_links.append(link_state)
+    def move_links_to_processed(self, links: List[Link]):
+        for link in links:
+            link_id = link.get('_id')
+            link_to_move = next((l for l in self.not_processed_links if l.id == link_id), None)
+            if link_to_move:
+                self.not_processed_links.remove(link_to_move)
+                self.processed_links.append(link)
     
-    def add_link_state_to_failed(self, link_state: LinkExecutionState):
-        link = next((l for l in self.not_processed_links if l.link_id == link_state.link_id), None)
-        if link:
-            self.not_processed_links.remove(link)
-            self.processed_links.append(link_state)
-            self.failed_links.append(link_state)
+    def move_links_to_not_processed(self, links: List[Link]):
+        for link in links:
+            link_id = link.get('_id')
+            link_to_move = next((l for l in self.processed_links if l.get('_id') == link_id), None)
+            if link_to_move:
+                self.processed_links.remove(link_to_move)
+                self.not_processed_links.append(link)
     
 class PauseTime(BaseModel):
     start_time: Optional[datetime] = None

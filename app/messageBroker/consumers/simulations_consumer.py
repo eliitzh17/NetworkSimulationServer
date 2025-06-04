@@ -6,7 +6,7 @@ import json
 from app.models.statuses_enums import EventType
 from app.app_container import app_container
 from app.db.events_db import EventsDB
-
+from pydantic import TypeAdapter
 class SimulationConsumer(BaseConsumer):
     def __init__(self, 
                  db, 
@@ -24,8 +24,8 @@ class SimulationConsumer(BaseConsumer):
 
     async def process_message(self, message: aio_pika.IncomingMessage):
         data = json.loads(message.body.decode())
-        simulation_event = SimulationEvent(**data)
-        
+        simulation_event = TypeAdapter(SimulationEvent).validate_python(data)
+        self.logger.info(f"Got new simulation event: {simulation_event.event_id}")
         async with await self.db.client.start_session() as session:
             async with session.start_transaction():
                 try:
@@ -33,7 +33,7 @@ class SimulationConsumer(BaseConsumer):
                         case EventType.SIMULATION_CREATED:
                             await self.simulation_manager.run_simulation(simulation_event, session)
                         case EventType.SIMULATION_UPDATED:
-                            pass
+                            await self.simulation_manager.update_simulation_with_completed_links(simulation_event, session)
                         case EventType.SIMULATION_STOPPED:
                             pass
                         case EventType.SIMULATION_COMPLETED:

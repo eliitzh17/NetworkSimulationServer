@@ -58,8 +58,6 @@ class SimulationActionsBL:
             simulation.simulation_time.pauses = []
 
             #reset links execution state
-            simulation.links_execution_state.failed_links = []
-            simulation.links_execution_state.success_links = []
             simulation.links_execution_state.processed_links = []
             simulation.links_execution_state.not_processed_links = SimulationMapper.map_links_to_link_execution_state(simulation.topology.links)
 

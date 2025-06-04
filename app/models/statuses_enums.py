@@ -36,8 +36,12 @@ class EventType(str, Enum):
     """
     Represents the type of event in the simulation.
     """
-    SIMULATION_CREATED = "simulation_created"
+    #link events
     LINK_RUN = "link_run"
+    LINK_COMPLETED = "link_completed"
+
+    #simulation events
+    SIMULATION_CREATED = "simulation_created"
     SIMULATION_UPDATED = "simulation_updated"
     SIMULATION_PAUSED = "simulation_paused"
     SIMULATION_RESUMED = "simulation_resumed"

@@ -5,6 +5,13 @@ from datetime import datetime
 from bson.objectid import ObjectId
 from pydantic import Field
 from typing import Literal
+
+class LinkExecutionState(BaseModel):    
+    start_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None
+    retry_count: int = 0
+    status: Optional[LinkStatusEnum] = LinkStatusEnum.pending
+
 class Link(BaseModel):
     """
     Represents a network link between two nodes in the topology.
@@ -17,6 +24,7 @@ class Link(BaseModel):
     from_node: str 
     to_node: str
     latency: int
+    execution_state: Optional[LinkExecutionState] = None
 
 class Config(BaseModel):
     """

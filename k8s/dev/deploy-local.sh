@@ -8,6 +8,8 @@ docker build -t $IMAGE .
 # Save image to tar file
 docker save $IMAGE > network-simulation-server.tar
 
+minikube start
+
 # Load image into Minikube
 eval $(minikube docker-env)
 docker load < network-simulation-server.tar
@@ -17,7 +19,6 @@ rm network-simulation-server.tar
 
 echo "Image loaded into Minikube."
 
-minikube start
 
 minikube addons enable metrics-server
 

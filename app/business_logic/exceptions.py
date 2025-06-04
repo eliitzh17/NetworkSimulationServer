@@ -3,6 +3,10 @@ Custom exception classes for the network simulation application.
 Provides better error handling and more descriptive error messages.
 """
 
+class TopologiesBLException(Exception):
+    """Base exception for all topologies business logic errors."""
+    pass
+
 class NetworkSimulationError(Exception):
     """Base exception for all network simulation errors."""
     pass

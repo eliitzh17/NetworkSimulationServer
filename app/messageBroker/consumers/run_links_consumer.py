@@ -19,8 +19,8 @@ class LinksConsumer(BaseConsumer):
         self.link_bl = LinkBusinessLogic(db)
 
     async def process_message(self, message: aio_pika.IncomingMessage):
-
         is_last_retry =  self._get_retry_count(message) >= self.max_retries
         data = json.loads(message.body.decode())
         link_event = LinkEvent(**data)
+        self.logger.info(f"Processing event: {link_event.event_id}")
         await self.link_bl.run_link(link_event,is_last_retry)

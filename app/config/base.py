@@ -76,7 +76,7 @@ class AppConfig:
     QUEUE_TTL: int = 600000
     DLX_TTL: int = 86400000
     INITIAL_DELAY: int = 2
-    MAX_RETRIES: int = 5
+    MAX_RETRIES: int = 3
     RETRY_DELAY: int = 5
 
     # Message timeout

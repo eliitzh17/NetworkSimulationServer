@@ -10,7 +10,6 @@ from app.models.events_models import SimulationEvent
 from app.models.statuses_enums import EventType
 from app.business_logic.validators.simulation_validators import SimulationValidators
 from app.models.pageination_models import CursorPaginationRequest
-from app.models.topolgy_simulation_models import LinkExecutionState, PauseTime
 from app.business_logic.validators.links_validators import LinksValidators
 from app.utils.logger import LoguruLogger
 
@@ -110,6 +109,20 @@ class TopologiesSimulationsBusinessLogic:
         pause_time = self.calculate_pause_time(simulation)
         simulation.simulation_time.total_execution_time = int(total_time - pause_time)
         
+
+    def count_failed_links(self, simulation: TopologySimulation):
+        return len([link for link in simulation.links_execution_state.processed_links if link.execution_state.status == LinkStatusEnum.failed])
+    
+    async def update_simulation_with_completed_links(self, simulation_event: SimulationEvent, session=None):
+        self.logger.info(f"Updating simulation {simulation_event.after.sim_id} with new completedlinks")
+        try:
+            await self.topologies_simulations_db.update_simulation(simulation_event.after.sim_id, simulation_event.after, session=session)
+            await self.events_db.update_events_handled([simulation_event.event_id], session=session)
+            self.logger.info(f"Simulation {simulation_event.after.sim_id} completed at: {simulation_event.after.simulation_time.end_time}")
+        except Exception as e:
+            self.logger.error(f"Error during update of simulation {simulation_event.after.sim_id} completed status: {str(e)}")
+            raise e
+    
     async def update_simulation_completed_status(self, simulation_event: SimulationEvent, session=None):
         """
         Update the status of a completed simulation.
@@ -119,7 +132,8 @@ class TopologiesSimulationsBusinessLogic:
             session: MongoDB session for transaction support
         """
         try:
-            if len(simulation_event.after.links_execution_state.failed_links) > 0:
+            failed_links_count = self.count_failed_links(simulation_event.after)
+            if failed_links_count > 0:
                 if self.links_validator.is_packet_loss_valid(simulation_event.after):
                     simulation_event.after.status = TopologyStatusEnum.done
                 else:
